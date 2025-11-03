@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.apparriendos.arriendos_api.mapper.CiudadMapper">
+
+  <resultMap id="CiudadMap" type="com.apparriendos.arriendos_api.model.Ciudad">
+    <id column="ID_CIUDAD" property="idCiudad"/>
+    <result column="NOMBRE" property="nombre"/>
+  </resultMap>
+
+  <select id="findAll" resultMap="CiudadMap">
+    SELECT ID_CIUDAD, NOMBRE FROM CIUDAD ORDER BY NOMBRE
+  </select>
+
+  <select id="findById" parameterType="long" resultMap="CiudadMap">
+    SELECT ID_CIUDAD, NOMBRE FROM CIUDAD WHERE ID_CIUDAD = #{id}
+  </select>
+
+  <insert id="insert" parameterType="com.apparriendos.arriendos_api.model.Ciudad">
+    <selectKey keyProperty="idCiudad" resultType="long" order="BEFORE">
+      SELECT SEQ_CIUDAD.NEXTVAL FROM DUAL
+    </selectKey>
+
+    INSERT INTO CIUDAD (ID_CIUDAD, NOMBRE)
+    VALUES (#{idCiudad}, #{nombre})
+  </insert>
+
+  <update id="update" parameterType="com.apparriendos.arriendos_api.model.Ciudad">
+    UPDATE CIUDAD SET NOMBRE = #{nombre} WHERE ID_CIUDAD = #{idCiudad}
+  </update>
+
+  <delete id="delete" parameterType="long">
+    DELETE FROM CIUDAD WHERE ID_CIUDAD = #{id}
+  </delete>
+
+</mapper>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.apparriendos.arriendos_api.mapper.ReservaMapper">
+
+  <resultMap id="ReservaMap" type="com.apparriendos.arriendos_api.model.Reserva">
+    <id property="idReserva" column="ID_RESERVA"/>
+    <result property="idDepartamento" column="ID_DEPARTAMENTO"/>
+    <result property="idArrendatario" column="ID_ARRENDATARIO"/>
+    <result property="fechaInicio" column="FECHA_INICIO"/>
+    <result property="fechaFin" column="FECHA_FIN"/>
+    <result property="estado" column="ESTADO"/>
+  </resultMap>
+
+  <select id="findAll" resultMap="ReservaMap">
+    SELECT ID_RESERVA, ID_DEPARTAMENTO, ID_ARRENDATARIO, FECHA_INICIO, FECHA_FIN, ESTADO
+    FROM RESERVAS
+    ORDER BY ID_RESERVA
+  </select>
+
+  <select id="findById" parameterType="long" resultMap="ReservaMap">
+    SELECT ID_RESERVA, ID_DEPARTAMENTO, ID_ARRENDATARIO, FECHA_INICIO, FECHA_FIN, ESTADO
+    FROM RESERVAS WHERE ID_RESERVA = #{id}
+  </select>
+
+  <insert id="insert" parameterType="com.apparriendos.arriendos_api.model.Reserva">
+    <selectKey keyProperty="idReserva" resultType="long" order="BEFORE">
+      SELECT SEQ_RESERVAS.NEXTVAL FROM DUAL
+    </selectKey>
+
+    INSERT INTO RESERVAS (ID_RESERVA, ID_DEPARTAMENTO, ID_ARRENDATARIO, FECHA_INICIO, FECHA_FIN, ESTADO)
+    VALUES (#{idReserva}, #{idDepartamento}, #{idArrendatario}, #{fechaInicio}, #{fechaFin}, #{estado})
+  </insert>
+
+  <update id="update" parameterType="com.apparriendos.arriendos_api.model.Reserva">
+    UPDATE RESERVAS
+    SET ID_DEPARTAMENTO = #{idDepartamento},
+        ID_ARRENDATARIO = #{idArrendatario},
+        FECHA_INICIO = #{fechaInicio},
+        FECHA_FIN = #{fechaFin},
+        ESTADO = #{estado}
+    WHERE ID_RESERVA = #{idReserva}
+  </update>
+
+  <delete id="delete" parameterType="long">
+    DELETE FROM RESERVAS WHERE ID_RESERVA = #{id}
+  </delete>
+  
+  <select id="countOverlapping" resultType="int">
+  <![CDATA[
+    SELECT COUNT(1)
+    FROM RESERVAS r
+    WHERE r.ID_DEPARTAMENTO = #{idDepartamento}
+      AND r.ESTADO <> 'CANCELADA'
+      AND r.FECHA_INICIO < #{fechaFin}
+      AND r.FECHA_FIN   > #{fechaInicio}
+  ]]>
+  </select>
+
+</mapper>

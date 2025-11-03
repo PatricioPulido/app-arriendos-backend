@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  oracle-xe:
+    image: gvenzl/oracle-xe
+    container_name: bd-pato-oracle-xe
+    ports:
+      - "1521:1521"
+      - "5500:5500"
+    environment:
+      ORACLE_PASSWORD: eithan2024
+
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - oracle-xe

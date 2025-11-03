@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.apparriendos.arriendos_api.mapper.DepartamentoMapper">
+
+   <!-- RESULT MAP opcional (puedes usar resultType en selects si prefieres) -->
+    <resultMap id="DepartamentoMap" type="com.apparriendos.arriendos_api.model.Departamento">
+        <id property="idDepartamento" column="ID_DEPARTAMENTO"/>
+        <result property="nombre" column="NOMBRE"/>
+        <result property="numero" column="NUMERO"/>
+        <result property="direccion" column="DIRECCION"/>
+        <result property="metrosCuadrados" column="METROS_CUADRADOS"/>
+        <result property="tipologia" column="TIPOLOGIA"/>
+        <!-- columnas adicionales en la tabla que no tienes en el POJO se ignoran -->
+        <!-- si luego agregas campos al POJO, mapéalos aquí -->
+    </resultMap>
+
+    <select id="findAll" resultMap="DepartamentoMap">
+        SELECT
+          ID_DEPARTAMENTO,
+          NOMBRE,
+          NUMERO,
+          DIRECCION,
+          METROS_CUADRADOS,
+          TIPOLOGIA
+        FROM DEPARTAMENTOS
+    </select>
+
+    <select id="findById" parameterType="long" resultMap="DepartamentoMap">
+        SELECT
+          ID_DEPARTAMENTO,
+          NOMBRE,
+          NUMERO,
+          DIRECCION,
+          METROS_CUADRADOS,
+          TIPOLOGIA
+        FROM DEPARTAMENTOS
+        WHERE ID_DEPARTAMENTO = #{id}
+    </select>
+
+    <insert id="insert" parameterType="com.apparriendos.arriendos_api.model.Departamento">
+        <!-- selectKey: obtiene el nextval y lo asigna a idDepartamento antes del INSERT -->
+        <selectKey keyProperty="idDepartamento" resultType="long" order="BEFORE">
+            SELECT SEQ_DEPARTAMENTOS.NEXTVAL FROM DUAL
+        </selectKey>
+
+        INSERT INTO DEPARTAMENTOS
+            (ID_DEPARTAMENTO, NOMBRE, NUMERO, DIRECCION, METROS_CUADRADOS, TIPOLOGIA)
+        VALUES
+            (#{idDepartamento}, #{nombre}, #{numero}, #{direccion}, #{metrosCuadrados}, #{tipologia})
+    </insert>
+
+    <update id="update" parameterType="com.apparriendos.arriendos_api.model.Departamento">
+        UPDATE DEPARTAMENTOS
+        SET NOMBRE = #{nombre},
+            NUMERO = #{numero},
+            DIRECCION = #{direccion},
+            METROS_CUADRADOS = #{metrosCuadrados},
+            TIPOLOGIA = #{tipologia}
+        WHERE ID_DEPARTAMENTO = #{idDepartamento}
+    </update>
+
+    <delete id="delete" parameterType="long">
+        DELETE FROM DEPARTAMENTOS WHERE ID_DEPARTAMENTO = #{id}
+    </delete>
+
+</mapper>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.apparriendos.arriendos_api.mapper.ZonaMapper">
+
+  <resultMap id="ZonaMap" type="com.apparriendos.arriendos_api.model.Zona">
+    <id column="ID_ZONA" property="idZona"/>
+    <result column="NOMBRE" property="nombre"/>
+    <result column="ID_CIUDAD" property="idCiudad"/>
+  </resultMap>
+
+  <select id="findAll" resultMap="ZonaMap">
+    SELECT ID_ZONA, NOMBRE, ID_CIUDAD FROM ZONA ORDER BY NOMBRE
+  </select>
+
+  <select id="findByCiudad" parameterType="long" resultMap="ZonaMap">
+    SELECT ID_ZONA, NOMBRE, ID_CIUDAD
+    FROM ZONA
+    WHERE ID_CIUDAD = #{ciudadId}
+    ORDER BY NOMBRE
+  </select>
+
+  <select id="findById" parameterType="long" resultMap="ZonaMap">
+    SELECT ID_ZONA, NOMBRE, ID_CIUDAD FROM ZONA WHERE ID_ZONA = #{id}
+  </select>
+
+  <insert id="insert" parameterType="com.apparriendos.arriendos_api.model.Zona">
+    <selectKey keyProperty="idZona" resultType="long" order="BEFORE">
+      SELECT SEQ_ZONA.NEXTVAL FROM DUAL
+    </selectKey>
+
+    INSERT INTO ZONA (ID_ZONA, NOMBRE, ID_CIUDAD)
+    VALUES (#{idZona}, #{nombre}, #{idCiudad})
+  </insert>
+
+  <update id="update" parameterType="com.apparriendos.arriendos_api.model.Zona">
+    UPDATE ZONA SET NOMBRE = #{nombre}, ID_CIUDAD = #{idCiudad} WHERE ID_ZONA = #{idZona}
+  </update>
+
+  <delete id="delete" parameterType="long">
+    DELETE FROM ZONA WHERE ID_ZONA = #{id}
+  </delete>
+
+</mapper>

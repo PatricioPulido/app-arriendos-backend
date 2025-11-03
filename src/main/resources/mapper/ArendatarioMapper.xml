@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.apparriendos.arriendos_api.mapper.ArrendatarioMapper">
+
+    <resultMap id="ArrendatarioMap" type="com.apparriendos.arriendos_api.model.Arrendatario">
+        <id property="idArrendatario" column="ID_ARRENDATARIO"/>
+        <result property="nombre" column="NOMBRE"/>
+        <result property="apellido" column="APELLIDO"/>
+        <result property="email" column="EMAIL"/>
+        <result property="telefono" column="TELEFONO"/>
+        <result property="fechaNacimiento" column="FECHA_NACIMIENTO"/>
+        <result property="idDepartamento" column="ID_DEPARTAMENTO"/>
+    </resultMap>
+
+    <select id="findAll" resultMap="ArrendatarioMap">
+        SELECT ID_ARRENDATARIO, NOMBRE, APELLIDO, EMAIL, TELEFONO, FECHA_NACIMIENTO, ID_DEPARTAMENTO
+        FROM ARRENDATARIOS
+        ORDER BY ID_ARRENDATARIO
+    </select>
+
+    <select id="findById" parameterType="long" resultMap="ArrendatarioMap">
+        SELECT ID_ARRENDATARIO, NOMBRE, APELLIDO, EMAIL, TELEFONO, FECHA_NACIMIENTO, ID_DEPARTAMENTO
+        FROM ARRENDATARIOS
+        WHERE ID_ARRENDATARIO = #{id}
+    </select>
+
+    <insert id="insert" parameterType="com.apparriendos.arriendos_api.model.Arrendatario">
+        <!-- selectKey: obtiene nextval y lo asigna a idArrendatario antes del INSERT -->
+        <selectKey keyProperty="idArrendatario" resultType="long" order="BEFORE">
+            SELECT SEQ_ARRENDATARIOS.NEXTVAL FROM DUAL
+        </selectKey>
+
+        INSERT INTO ARRENDATARIOS
+          (ID_ARRENDATARIO, NOMBRE, APELLIDO, EMAIL, TELEFONO, FECHA_NACIMIENTO, ID_DEPARTAMENTO)
+        VALUES
+          (#{idArrendatario}, #{nombre}, #{apellido}, #{email}, #{telefono}, #{fechaNacimiento}, #{idDepartamento})
+    </insert>
+
+    <update id="update" parameterType="com.apparriendos.arriendos_api.model.Arrendatario">
+        UPDATE ARRENDATARIOS
+        SET NOMBRE = #{nombre},
+            APELLIDO = #{apellido},
+            EMAIL = #{email},
+            TELEFONO = #{telefono},
+            FECHA_NACIMIENTO = #{fechaNacimiento},
+            ID_DEPARTAMENTO = #{idDepartamento}
+        WHERE ID_ARRENDATARIO = #{idArrendatario}
+    </update>
+
+    <delete id="delete" parameterType="long">
+        DELETE FROM ARRENDATARIOS WHERE ID_ARRENDATARIO = #{id}
+    </delete>
+
+</mapper>
