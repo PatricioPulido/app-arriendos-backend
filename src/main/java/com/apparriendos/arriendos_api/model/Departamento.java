@@ -17,4 +17,6 @@ public class Departamento {
     private String direccion;
     private Double metrosCuadrados;
     private String tipologia;
+    prívate String imagenUrl;
+    prívate String precio;
 }
