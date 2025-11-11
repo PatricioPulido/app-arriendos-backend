@@ -9,4 +9,6 @@ public class Ciudad {
 
     @NotBlank(message = "El nombre de la ciudad no puede estar vacío")
     private String nombre;
+    private Long regCodigo;   // FK a REGION
+    private Long paisCodigo;  // FK a PAIS
 }

@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/departamentos")
+//@CrossOrigin(origins = "*") // No olvides esto para el frontend
 public class DepartamentoController {
 
     private final DepartamentoService service;
@@ -17,7 +18,11 @@ public class DepartamentoController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getAll() {
+    public ResponseEntity<?> getAll(@RequestParam(required = false) String ciudad) {
+        // Si viene parámetro ciudad, buscar por ciudad, sino traer todos
+        if (ciudad != null && !ciudad.trim().isEmpty()) {
+            return service.getByCiudad(ciudad);
+        }
         return service.getAll();
     }
 

@@ -19,4 +19,11 @@ public class Departamento {
     private String tipologia;
     private int cantidad_habitaciones;
     private int precio;
+    
+     // Relación con Ciudad
+    @NotBlank(message = "La ciudad es requerida")
+    private Long idCiudad;
+    
+    // Opcional: para mostrar el nombre de la ciudad en las respuestas
+    private String nombreCiudad;
 }

@@ -9,6 +9,7 @@ import java.util.List;
 public interface DepartamentoMapper {
     List<Departamento> findAll();
     Departamento findById(@Param("id") Long id);
+    List<Departamento> findByCiudad(@Param("ciudad") String ciudad); // NUEVO MÉTODO
     void insert(Departamento departamento);
     void update(Departamento departamento);
     void delete(@Param("id") Long id);

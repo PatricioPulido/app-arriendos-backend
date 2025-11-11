@@ -5,73 +5,74 @@
 
 <mapper namespace="com.apparriendos.arriendos_api.mapper.DepartamentoMapper">
 
-   <!-- RESULT MAP opcional (puedes usar resultType en selects si prefieres) -->
     <resultMap id="DepartamentoMap" type="com.apparriendos.arriendos_api.model.Departamento">
-        <id property="idDepartamento" column="ID_DEPARTAMENTO"/>
-        <result property="nombre" column="NOMBRE"/>
-        <result property="numero" column="NUMERO"/>
-        <result property="direccion" column="DIRECCION"/>
-        <result property="metrosCuadrados" column="METROS_CUADRADOS"/>
-        <result property="tipologia" column="TIPOLOGIA"/>
-        <result property="cantidad_habitaciones" column="CANTIDAD_HABITACIONES"/>
-        <result property="precio" column="PRECIO"/>
-        <!-- columnas adicionales en la tabla que no tienes en el POJO se ignoran -->
-        <!-- si luego agregas campos al POJO, mapéalos aquí -->
+        <id column="ID_DEPARTAMENTO" property="idDepartamento"/>
+        <result column="NOMBRE" property="nombre"/>
+        <result column="NUMERO" property="numero"/>
+        <result column="DIRECCION" property="direccion"/>
+        <result column="METROS_CUADRADOS" property="metrosCuadrados"/>
+        <result column="TIPOLOGIA" property="tipologia"/>
+        <result column="CANTIDAD_HABITACIONES" property="cantidad_habitaciones"/>
+        <result column="PRECIO" property="precio"/>
+        <result column="ID_CIUDAD" property="idCiudad"/>
+        <!-- Para obtener el nombre de la ciudad en una sola consulta -->
+        <result column="NOMBRE_CIUDAD" property="nombreCiudad"/>
     </resultMap>
 
+    <!-- Listar todos los departamentos con nombre de ciudad -->
     <select id="findAll" resultMap="DepartamentoMap">
-        SELECT
-          ID_DEPARTAMENTO,
-          NOMBRE,
-          NUMERO,
-          DIRECCION,
-          METROS_CUADRADOS,
-          TIPOLOGIA,
-          CANTIDAD_HABITACIONES,
-          PRECIO
-        FROM DEPARTAMENTOS
+        SELECT d.*, c.NOMBRE as NOMBRE_CIUDAD
+        FROM DEPARTAMENTOS d
+        LEFT JOIN CIUDAD c ON d.ID_CIUDAD = c.ID_CIUDAD
+        ORDER BY d.NOMBRE
     </select>
 
+    <!-- Buscar por ID -->
     <select id="findById" parameterType="long" resultMap="DepartamentoMap">
-        SELECT
-          ID_DEPARTAMENTO,
-          NOMBRE,
-          NUMERO,
-          DIRECCION,
-          METROS_CUADRADOS,
-          TIPOLOGIA,
-          CANTIDAD_HABITACIONES,
-          PRECIO
-        FROM DEPARTAMENTOS
-        WHERE ID_DEPARTAMENTO = #{id}
+        SELECT d.*, c.NOMBRE as NOMBRE_CIUDAD
+        FROM DEPARTAMENTOS d
+        LEFT JOIN CIUDAD c ON d.ID_CIUDAD = c.ID_CIUDAD
+        WHERE d.ID_DEPARTAMENTO = #{id}
     </select>
 
+    <!-- Buscar departamentos por ciudad -->
+    <select id="findByCiudad" parameterType="string" resultMap="DepartamentoMap">
+        SELECT d.*, c.NOMBRE as NOMBRE_CIUDAD
+        FROM DEPARTAMENTOS d
+        INNER JOIN CIUDAD c ON d.ID_CIUDAD = c.ID_CIUDAD
+        WHERE UPPER(c.NOMBRE) LIKE '%' || UPPER(#{ciudad}) || '%'
+        ORDER BY d.NOMBRE
+    </select>
+
+    <!-- Insert -->
     <insert id="insert" parameterType="com.apparriendos.arriendos_api.model.Departamento">
-        <!-- selectKey: obtiene el nextval y lo asigna a idDepartamento antes del INSERT -->
         <selectKey keyProperty="idDepartamento" resultType="long" order="BEFORE">
             SELECT SEQ_DEPARTAMENTOS.NEXTVAL FROM DUAL
         </selectKey>
 
-        INSERT INTO DEPARTAMENTOS
-            (ID_DEPARTAMENTO, NOMBRE, NUMERO, DIRECCION, METROS_CUADRADOS, TIPOLOGIA, CANTIDAD_HABITACIONES,
-          PRECIO)
-        VALUES
-            (#{idDepartamento}, #{nombre}, #{numero}, #{direccion}, #{metrosCuadrados}, #{tipologia}, 
-        #{cantidad_habitaciones},#{precio})
+        INSERT INTO DEPARTAMENTOS (ID_DEPARTAMENTO, NOMBRE, NUMERO, DIRECCION, 
+        METROS_CUADRADOS, TIPOLOGIA, CANTIDAD_HABITACIONES, 
+        PRECIO, ID_CIUDAD)
+        VALUES (#{idDepartamento}, #{nombre}, #{numero}, #{direccion}, 
+        #{metrosCuadrados}, #{tipologia}, #{cantidad_habitaciones}, 
+        #{precio}, #{idCiudad})
     </insert>
 
+    <!-- Update -->
     <update id="update" parameterType="com.apparriendos.arriendos_api.model.Departamento">
         UPDATE DEPARTAMENTOS
         SET NOMBRE = #{nombre},
-            NUMERO = #{numero},
-            DIRECCION = #{direccion},
-            METROS_CUADRADOS = #{metrosCuadrados},
-            TIPOLOGIA = #{tipologia},
-            CANTIDAD_HABITACIONES = #{cantidad_habitaciones},
-            PRECIO = #{precio}
+        NUMERO = #{numero},
+        DIRECCION = #{direccion},
+        METROS_CUADRADOS = #{metrosCuadrados},
+        TIPOLOGIA = #{tipologia},
+        CANTIDAD_HABITACIONES = #{cantidad_habitaciones},
+        PRECIO = #{precio},
+        ID_CIUDAD = #{idCiudad}
         WHERE ID_DEPARTAMENTO = #{idDepartamento}
     </update>
 
+    <!-- Delete -->
     <delete id="delete" parameterType="long">
         DELETE FROM DEPARTAMENTOS WHERE ID_DEPARTAMENTO = #{id}
     </delete>

@@ -10,6 +10,7 @@ import java.util.List;
 public interface CiudadMapper {
     List<Ciudad> findAll();
     Ciudad findById(@Param("id") Long id);
+    List<Ciudad> searchByNombre(@Param("nombre") String nombre);
     void insert(Ciudad ciudad);
     void update(Ciudad ciudad);
     void delete(@Param("id") Long id);

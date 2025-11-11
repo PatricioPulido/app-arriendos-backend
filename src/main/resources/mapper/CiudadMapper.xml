@@ -7,29 +7,52 @@
   <resultMap id="CiudadMap" type="com.apparriendos.arriendos_api.model.Ciudad">
     <id column="ID_CIUDAD" property="idCiudad"/>
     <result column="NOMBRE" property="nombre"/>
+    <result column="REGCODIGO" property="regCodigo"/>
+    <result column="PAISCODIGO" property="paisCodigo"/>
   </resultMap>
 
+  <!-- Listar todas -->
   <select id="findAll" resultMap="CiudadMap">
-    SELECT ID_CIUDAD, NOMBRE FROM CIUDAD ORDER BY NOMBRE
+    SELECT ID_CIUDAD, NOMBRE, REGCODIGO, PAISCODIGO
+    FROM CIUDAD
+    ORDER BY NOMBRE
   </select>
 
+  <!-- Buscar por ID -->
   <select id="findById" parameterType="long" resultMap="CiudadMap">
-    SELECT ID_CIUDAD, NOMBRE FROM CIUDAD WHERE ID_CIUDAD = #{id}
+    SELECT ID_CIUDAD, NOMBRE, REGCODIGO, PAISCODIGO
+    FROM CIUDAD
+    WHERE ID_CIUDAD = #{id}
   </select>
 
+  <!-- Buscar por nombre (para el buscador) -->
+  <select id="searchByNombre" parameterType="string" resultMap="CiudadMap">
+    SELECT ID_CIUDAD, NOMBRE, REGCODIGO, PAISCODIGO
+    FROM CIUDAD
+    WHERE UPPER(NOMBRE) LIKE '%' || UPPER(#{nombre}) || '%'
+    ORDER BY NOMBRE
+  </select>
+
+  <!-- Insert -->
   <insert id="insert" parameterType="com.apparriendos.arriendos_api.model.Ciudad">
     <selectKey keyProperty="idCiudad" resultType="long" order="BEFORE">
       SELECT SEQ_CIUDAD.NEXTVAL FROM DUAL
     </selectKey>
 
-    INSERT INTO CIUDAD (ID_CIUDAD, NOMBRE)
-    VALUES (#{idCiudad}, #{nombre})
+    INSERT INTO CIUDAD (ID_CIUDAD, NOMBRE, REGCODIGO, PAISCODIGO)
+    VALUES (#{idCiudad}, #{nombre}, #{regCodigo}, #{paisCodigo})
   </insert>
 
+  <!-- Update -->
   <update id="update" parameterType="com.apparriendos.arriendos_api.model.Ciudad">
-    UPDATE CIUDAD SET NOMBRE = #{nombre} WHERE ID_CIUDAD = #{idCiudad}
+    UPDATE CIUDAD
+    SET NOMBRE = #{nombre},
+        REGCODIGO = #{regCodigo},
+        PAISCODIGO = #{paisCodigo}
+    WHERE ID_CIUDAD = #{idCiudad}
   </update>
 
+  <!-- Delete -->
   <delete id="delete" parameterType="long">
     DELETE FROM CIUDAD WHERE ID_CIUDAD = #{id}
   </delete>

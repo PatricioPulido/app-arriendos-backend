@@ -34,7 +34,8 @@ public class CiudadService {
     public ResponseEntity<?> getById(Long id) {
         try {
             Ciudad c = mapper.findById(id);
-            if (c == null) return ResponseEntity.status(404).body(Map.of("mensaje", "Ciudad no encontrada"));
+            if (c == null)
+                return ResponseEntity.status(404).body(Map.of("mensaje", "Ciudad no encontrada"));
             return ResponseEntity.ok(c);
         } catch (Exception ex) {
             logger.error("Error obtener ciudad", ex);
@@ -42,11 +43,22 @@ public class CiudadService {
         }
     }
 
+    public ResponseEntity<?> search(String nombre) {
+        try {
+            List<Ciudad> list = mapper.searchByNombre(nombre);
+            return ResponseEntity.ok(list);
+        } catch (Exception ex) {
+            logger.error("Error buscar ciudades", ex);
+            return dbErrorHandler.handleException(ex, "Buscar ciudades");
+        }
+    }
+
     public ResponseEntity<?> create(Ciudad ciudad) {
         try {
-            ciudad.setIdCiudad(null); // evitar que client imponga id
+            ciudad.setIdCiudad(null);
             mapper.insert(ciudad);
-            return ResponseEntity.status(201).body(Map.of("mensaje", "Ciudad creada", "id", ciudad.getIdCiudad()));
+            return ResponseEntity.status(201)
+                    .body(Map.of("mensaje", "Ciudad creada", "id", ciudad.getIdCiudad()));
         } catch (Exception ex) {
             logger.error("Error crear ciudad", ex);
             return dbErrorHandler.handleException(ex, "Crear ciudad");
