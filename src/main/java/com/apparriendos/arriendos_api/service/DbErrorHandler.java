@@ -1,5 +1,8 @@
 package com.apparriendos.arriendos_api.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +15,23 @@ import java.util.Map;
 @Service
 public class DbErrorHandler {
 
+    private static final Logger logger = LoggerFactory.getLogger(DbErrorHandler.class);
+
+    // Si es false (por defecto), no se envian al cliente mensajes SQL ni detalles internos
+    @Value("${app.error.expose-details:false}")
+    private boolean exposeDetails;
+
     public ResponseEntity<Map<String, String>> handleException(Exception ex, String action) {
+        ResponseEntity<Map<String, String>> response = buildResponse(ex, action);
+        logger.error("Error en '{}'", action, ex);
+        if (!exposeDetails && response.getBody() != null) {
+            response.getBody().remove("detalle");
+            response.getBody().remove("codigo_sql");
+        }
+        return response;
+    }
+
+    private ResponseEntity<Map<String, String>> buildResponse(Exception ex, String action) {
         Map<String, String> error = new HashMap<>();
 
         error.put("accion", action);
