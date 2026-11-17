@@ -1,6 +1,13 @@
-# Base de datos Oracle para desarrollo.
-# Copia .env.example a .env y define tus contrasenas antes de levantarlo:
-#   docker compose up -d
+# Entorno local completo. Copia .env.example a .env y completa las contrasenas.
+#
+#   Solo la base de datos (para correr la API desde NetBeans o mvnw):
+#     docker compose up -d
+#
+#   Base de datos + API (no necesitas Java instalado):
+#     docker compose --profile app up -d --build
+#
+# La primera vez que se crea el volumen, Oracle aplica db/migrations/*.sql
+# automaticamente (tablas, secuencias, usuarios). Tarda 1-3 minutos.
 services:
   oracle-xe:
     image: gvenzl/oracle-xe:21-slim
@@ -13,6 +20,28 @@ services:
       APP_USER_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
     volumes:
       - oracle-data:/opt/oracle/oradata
+      - ./db/init:/container-entrypoint-initdb.d:ro
+      - ./db/migrations:/db-migrations:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+  api:
+    profiles: ["app"]
+    build: .
+    container_name: arriendos-api
+    depends_on:
+      oracle-xe:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      # Dentro de docker la BD no esta en localhost sino en el servicio oracle-xe
+      DB_URL: jdbc:oracle:thin:@//oracle-xe:1521/XEPDB1
+    ports:
+      - "127.0.0.1:8080:8080"
 
 volumes:
   oracle-data:
