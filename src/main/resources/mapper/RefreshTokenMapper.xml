@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.apparriendos.arriendos_api.mapper.RefreshTokenMapper">
+
+  <resultMap id="RefreshTokenMap" type="com.apparriendos.arriendos_api.model.RefreshToken">
+    <id column="ID_REFRESH_TOKEN" property="idRefreshToken"/>
+    <result column="ID_USUARIO" property="idUsuario"/>
+    <result column="TOKEN_HASH" property="tokenHash"/>
+    <result column="EXPIRA" property="expira"/>
+    <result column="REVOCADO" property="revocado"/>
+  </resultMap>
+
+  <select id="findByHash" resultMap="RefreshTokenMap">
+    SELECT ID_REFRESH_TOKEN, ID_USUARIO, TOKEN_HASH, EXPIRA, REVOCADO
+    FROM REFRESH_TOKENS WHERE TOKEN_HASH = #{tokenHash}
+  </select>
+
+  <insert id="insert" parameterType="com.apparriendos.arriendos_api.model.RefreshToken">
+    <selectKey keyProperty="idRefreshToken" resultType="long" order="BEFORE">
+      SELECT SEQ_REFRESH_TOKENS.NEXTVAL FROM DUAL
+    </selectKey>
+    INSERT INTO REFRESH_TOKENS (ID_REFRESH_TOKEN, ID_USUARIO, TOKEN_HASH, EXPIRA, REVOCADO)
+    VALUES (#{idRefreshToken}, #{idUsuario}, #{tokenHash}, #{expira}, 0)
+  </insert>
+
+  <update id="revoke">
+    UPDATE REFRESH_TOKENS SET REVOCADO = 1 WHERE ID_REFRESH_TOKEN = #{id}
+  </update>
+
+  <update id="revokeAllForUser">
+    UPDATE REFRESH_TOKENS SET REVOCADO = 1 WHERE ID_USUARIO = #{idUsuario} AND REVOCADO = 0
+  </update>
+
+</mapper>

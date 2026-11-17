@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.apparriendos.arriendos_api.mapper.UsuarioMapper">
+
+  <resultMap id="UsuarioMap" type="com.apparriendos.arriendos_api.model.Usuario">
+    <id column="ID_USUARIO" property="idUsuario"/>
+    <result column="EMAIL" property="email"/>
+    <result column="PASSWORD_HASH" property="passwordHash"/>
+    <result column="ROL" property="rol"/>
+    <result column="ID_ARRENDATARIO" property="idArrendatario"/>
+    <result column="ACTIVO" property="activo"/>
+    <result column="FECHA_CREACION" property="fechaCreacion"/>
+  </resultMap>
+
+  <sql id="columnas">
+    ID_USUARIO, EMAIL, PASSWORD_HASH, ROL, ID_ARRENDATARIO, ACTIVO, FECHA_CREACION
+  </sql>
+
+  <select id="findByEmail" resultMap="UsuarioMap">
+    SELECT <include refid="columnas"/> FROM USUARIOS WHERE LOWER(EMAIL) = LOWER(#{email})
+  </select>
+
+  <select id="findById" resultMap="UsuarioMap">
+    SELECT <include refid="columnas"/> FROM USUARIOS WHERE ID_USUARIO = #{id}
+  </select>
+
+  <select id="countByRol" resultType="int">
+    SELECT COUNT(1) FROM USUARIOS WHERE ROL = #{rol}
+  </select>
+
+  <insert id="insert" parameterType="com.apparriendos.arriendos_api.model.Usuario">
+    <selectKey keyProperty="idUsuario" resultType="long" order="BEFORE">
+      SELECT SEQ_USUARIOS.NEXTVAL FROM DUAL
+    </selectKey>
+    INSERT INTO USUARIOS (ID_USUARIO, EMAIL, PASSWORD_HASH, ROL, ID_ARRENDATARIO, ACTIVO)
+    VALUES (#{idUsuario}, #{email}, #{passwordHash}, #{rol}, #{idArrendatario, jdbcType=NUMERIC},
+            <choose><when test="activo">1</when><otherwise>0</otherwise></choose>)
+  </insert>
+
+</mapper>
