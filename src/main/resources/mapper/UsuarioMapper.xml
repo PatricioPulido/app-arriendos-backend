@@ -32,7 +32,7 @@
 
   <insert id="insert" parameterType="com.apparriendos.arriendos_api.model.Usuario">
     <selectKey keyProperty="idUsuario" resultType="long" order="BEFORE">
-      SELECT SEQ_USUARIOS.NEXTVAL FROM DUAL
+      SELECT nextval('seq_usuarios')
     </selectKey>
     INSERT INTO USUARIOS (ID_USUARIO, EMAIL, PASSWORD_HASH, ROL, ID_ARRENDATARIO, ACTIVO)
     VALUES (#{idUsuario}, #{email}, #{passwordHash}, #{rol}, #{idArrendatario, jdbcType=NUMERIC},

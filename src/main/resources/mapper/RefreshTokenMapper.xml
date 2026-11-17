@@ -19,7 +19,7 @@
 
   <insert id="insert" parameterType="com.apparriendos.arriendos_api.model.RefreshToken">
     <selectKey keyProperty="idRefreshToken" resultType="long" order="BEFORE">
-      SELECT SEQ_REFRESH_TOKENS.NEXTVAL FROM DUAL
+      SELECT nextval('seq_refresh_tokens')
     </selectKey>
     INSERT INTO REFRESH_TOKENS (ID_REFRESH_TOKEN, ID_USUARIO, TOKEN_HASH, EXPIRA, REVOCADO)
     VALUES (#{idRefreshToken}, #{idUsuario}, #{tokenHash}, #{expira}, 0)

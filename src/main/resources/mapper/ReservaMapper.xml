@@ -32,7 +32,7 @@
 
   <insert id="insert" parameterType="com.apparriendos.arriendos_api.model.Reserva">
     <selectKey keyProperty="idReserva" resultType="long" order="BEFORE">
-      SELECT SEQ_RESERVAS.NEXTVAL FROM DUAL
+      SELECT nextval('seq_reservas')
     </selectKey>
 
     INSERT INTO RESERVAS (ID_RESERVA, ID_DEPARTAMENTO, ID_ARRENDATARIO, FECHA_INICIO, FECHA_FIN, ESTADO)

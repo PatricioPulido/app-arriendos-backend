@@ -23,7 +23,7 @@ public class MyBatisConfig {
     // Como este bean reemplaza al de Spring Boot, las propiedades mybatis.* no se aplican solas.
     org.apache.ibatis.session.Configuration config = new org.apache.ibatis.session.Configuration();
     config.setMapUnderscoreToCamelCase(true);
-    // Oracle rechaza parametros null sin tipo (ORA-17004 "Invalid column type: 1111")
+    // Parametros null sin tipo se envian como NULL generico (el default OTHER falla en algunos drivers)
     config.setJdbcTypeForNull(JdbcType.NULL);
     fb.setConfiguration(config);
     fb.setMapperLocations(

@@ -49,7 +49,7 @@
     <insert id="insert" parameterType="com.apparriendos.arriendos_api.model.Departamento">
         <!-- selectKey: obtiene el nextval y lo asigna a idDepartamento antes del INSERT -->
         <selectKey keyProperty="idDepartamento" resultType="long" order="BEFORE">
-            SELECT SEQ_DEPARTAMENTOS.NEXTVAL FROM DUAL
+            SELECT nextval('seq_departamentos')
         </selectKey>
 
         INSERT INTO DEPARTAMENTOS

@@ -42,32 +42,35 @@ public class DbErrorHandler {
 
             if (rootCause instanceof SQLException sqlEx) {
                 String sqlState = sqlEx.getSQLState();
-                int errorCode = sqlEx.getErrorCode();
                 String message = sqlEx.getMessage();
 
-                error.put("codigo_sql", String.valueOf(errorCode));
+                error.put("codigo_sql", sqlState);
                 error.put("detalle", message);
 
-                // Ejemplos de códigos Oracle
-                switch (errorCode) {
-                    case 942: // ORA-00942: tabla o vista no existe
+                // Codigos SQLSTATE de PostgreSQL
+                String estado = sqlState == null ? "" : sqlState;
+                switch (estado) {
+                    case "42P01": // tabla no existe
                         error.put("mensaje", "La tabla o vista referenciada no existe");
                         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
 
-                    case 1: // ORA-00001: unique constraint violated
+                    case "23505": // unique_violation
                         error.put("mensaje", "Violación de restricción única (duplicado)");
                         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
 
-                    case 2291: // ORA-02291: integridad referencial (padre inexistente)
-                        error.put("mensaje", "Violación de clave foránea (registro padre inexistente)");
+                    case "23503": // foreign_key_violation (padre inexistente o hijos existentes)
+                        boolean tieneHijos = message != null && message.contains("still referenced");
+                        error.put("mensaje", tieneHijos
+                                ? "No se puede eliminar: existen registros relacionados"
+                                : "Violación de clave foránea (registro padre inexistente)");
                         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
 
-                    case 2292: // ORA-02292: integridad referencial (hijos existentes)
-                        error.put("mensaje", "No se puede eliminar: existen registros relacionados");
-                        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+                    case "23514": // check_violation
+                        error.put("mensaje", "Algún dato no cumple las reglas (por ejemplo fechas o estado)");
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
 
                     default:
-                        error.put("mensaje", "Error en base de datos (código ORA-" + errorCode + ")");
+                        error.put("mensaje", "Error en base de datos (código " + estado + ")");
                         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
                 }
             }
