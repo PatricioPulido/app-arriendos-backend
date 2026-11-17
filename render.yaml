@@ -16,8 +16,6 @@ services:
         sync: false
       - key: DB_PASSWORD
         sync: false
-      - key: DB_SCHEMA
-        sync: false
       - key: DB_POOL_SIZE
         value: "3"
       - key: JWT_SECRET

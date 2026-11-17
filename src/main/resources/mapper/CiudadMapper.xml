@@ -19,7 +19,7 @@
 
   <insert id="insert" parameterType="com.apparriendos.arriendos_api.model.Ciudad">
     <selectKey keyProperty="idCiudad" resultType="long" order="BEFORE">
-      SELECT SEQ_CIUDAD.NEXTVAL FROM DUAL
+      SELECT nextval('seq_ciudad')
     </selectKey>
 
     INSERT INTO CIUDAD (ID_CIUDAD, NOMBRE)

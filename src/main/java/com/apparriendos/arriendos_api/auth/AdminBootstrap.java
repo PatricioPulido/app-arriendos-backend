@@ -51,7 +51,7 @@ public class AdminBootstrap implements ApplicationRunner {
             usuarioMapper.insert(admin);
             logger.info("Usuario ADMIN inicial creado: {}", admin.getEmail());
         } catch (Exception ex) {
-            logger.error("No se pudo crear el ADMIN inicial (¿ejecutaste la migración 002?)", ex);
+            logger.error("No se pudo crear el ADMIN inicial (¿ejecutaste db/migrations?)", ex);
         }
     }
 }
