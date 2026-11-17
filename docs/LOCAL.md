@@ -16,12 +16,20 @@ La app usa PostgreSQL: Supabase en produccion y un Postgres en Docker en tu PC.
    `http://localhost:8080/swagger-ui.html`.
 6. En el frontend: `npm start` y entra a `http://localhost:3000` con tu ADMIN.
 
-## Opcion B: BD en Docker y la API desde NetBeans
+## Opcion B: BD en Docker y la API desde IntelliJ (o NetBeans)
 
-1. Igual que arriba, pero `docker compose up -d` (solo la BD).
-2. Necesitas JDK 17 o superior (Temurin: https://adoptium.net).
-3. En la carpeta del backend: `.\mvnw.cmd spring-boot:run`, o Run en NetBeans.
-   La API lee el `.env` sola.
+1. Igual que arriba, pero `docker compose up -d` (solo la BD). Espera a que
+   `docker compose ps` muestre `healthy`.
+2. IntelliJ: File > Open > carpeta del backend. En File > Project Structure >
+   SDK elige un JDK 17 (Add SDK > Download JDK > Eclipse Temurin 17).
+   Si avisa de Lombok / annotation processing, acepta Enable.
+3. Abre `ArriendosApiApplication.java` y aprieta el boton verde de `main`.
+   Debe salir `Started ArriendosApiApplication`. La API lee el `.env` sola
+   (el Working directory de la ejecucion debe ser la carpeta del backend).
+4. Sin IDE: `.\mvnw.cmd spring-boot:run`.
+
+Si el front dice "No se pudo conectar con el servidor", el back no esta
+corriendo: revisa `http://localhost:8080/actuator/health`.
 
 ## Ver la BD
 
