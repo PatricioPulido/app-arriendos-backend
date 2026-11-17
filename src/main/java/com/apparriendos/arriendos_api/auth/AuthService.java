@@ -99,8 +99,9 @@ public class AuthService {
     /**
      * Cambia un refresh token valido por uno nuevo (rotacion). Si llega un token ya usado,
      * se asume robo y se revocan todas las sesiones de ese usuario.
+     * noRollbackFor: la revocacion debe quedar guardada aunque se responda 401.
      */
-    @Transactional
+    @Transactional(noRollbackFor = AuthException.class)
     public Tokens refresh(String rawToken) {
         if (rawToken == null || rawToken.isBlank()) {
             throw new AuthException(HttpStatus.UNAUTHORIZED, "Sesión expirada");
