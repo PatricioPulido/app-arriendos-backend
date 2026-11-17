@@ -2,6 +2,7 @@ package com.apparriendos.arriendos_api.model;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
 
 @Data
@@ -17,6 +18,8 @@ public class Departamento {
     private String direccion;
     private Double metrosCuadrados;
     private String tipologia;
-    prívate String imagenUrl;
-    prívate String precio;
+    private String imagenUrl;
+
+    @PositiveOrZero(message = "El precio no puede ser negativo")
+    private Long precio; // CLP por noche
 }

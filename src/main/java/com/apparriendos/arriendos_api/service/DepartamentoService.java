@@ -43,8 +43,12 @@ public class DepartamentoService {
 
     public ResponseEntity<?> create(Departamento departamento) {
         try {
+            departamento.setIdDepartamento(null); // el id lo asigna la secuencia
             mapper.insert(departamento);
-            return ResponseEntity.status(201).body(Map.of("mensaje", "Departamento ", departamento.getNombre()," creado con éxito"));
+            return ResponseEntity.status(201).body(Map.of(
+                    "mensaje", "Departamento " + departamento.getNombre() + " creado con éxito",
+                    "id", departamento.getIdDepartamento()
+            ));
         } catch (Exception ex) {
             return dbErrorHandler.handleException(ex, "Crear departamento");
         }
