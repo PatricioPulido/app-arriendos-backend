@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.apparriendos.arriendos_api.mapper.ImagenMapper">
+
+    <resultMap id="ImagenMap" type="com.apparriendos.arriendos_api.model.Imagen">
+        <id property="idImagen" column="ID_IMAGEN"/>
+        <result property="idDepartamento" column="ID_DEPARTAMENTO"/>
+        <result property="ruta" column="RUTA"/>
+        <result property="url" column="URL"/>
+        <result property="orden" column="ORDEN"/>
+    </resultMap>
+
+    <select id="findByDepartamento" resultMap="ImagenMap">
+        SELECT ID_IMAGEN, ID_DEPARTAMENTO, RUTA, URL, ORDEN
+        FROM DEPARTAMENTO_IMAGENES
+        WHERE ID_DEPARTAMENTO = #{idDepartamento}
+        ORDER BY ORDEN, ID_IMAGEN
+    </select>
+
+    <select id="findById" resultMap="ImagenMap">
+        SELECT ID_IMAGEN, ID_DEPARTAMENTO, RUTA, URL, ORDEN
+        FROM DEPARTAMENTO_IMAGENES WHERE ID_IMAGEN = #{id}
+    </select>
+
+    <select id="maxOrden" resultType="int">
+        SELECT COALESCE(MAX(ORDEN), -1) FROM DEPARTAMENTO_IMAGENES WHERE ID_DEPARTAMENTO = #{idDepartamento}
+    </select>
+
+    <insert id="insert" parameterType="com.apparriendos.arriendos_api.model.Imagen">
+        <selectKey keyProperty="idImagen" resultType="long" order="BEFORE">
+            SELECT nextval('seq_departamento_imagenes')
+        </selectKey>
+        INSERT INTO DEPARTAMENTO_IMAGENES (ID_IMAGEN, ID_DEPARTAMENTO, RUTA, URL, ORDEN)
+        VALUES (#{idImagen}, #{idDepartamento}, #{ruta}, #{url}, #{orden})
+    </insert>
+
+    <update id="updateOrden">
+        UPDATE DEPARTAMENTO_IMAGENES SET ORDEN = #{orden}
+        WHERE ID_IMAGEN = #{idImagen} AND ID_DEPARTAMENTO = #{idDepartamento}
+    </update>
+
+    <delete id="delete">
+        DELETE FROM DEPARTAMENTO_IMAGENES WHERE ID_IMAGEN = #{id}
+    </delete>
+
+</mapper>

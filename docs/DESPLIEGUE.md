@@ -10,8 +10,12 @@ El backend usa la BD Postgres de Supabase.
 1. Crea cuenta en https://supabase.com con tu GitHub y un proyecto nuevo.
    Region: **South America (Sao Paulo)**, la mas cercana a Chile. Guarda la
    contrasena de la BD en un lugar seguro.
-2. En el proyecto: **SQL Editor** > New query > pega todo
-   `db/migrations/001_esquema_inicial.sql` > Run.
+2. En el proyecto: **SQL Editor** > New query > pega y ejecuta (Run), en este orden:
+   - `db/migrations/001_esquema_inicial.sql`
+   - `db/migrations/002_anfitriones_y_galeria.sql`
+   - `db/supabase/storage_bucket.sql` (crea el bucket publico `departamentos` para las fotos)
+
+   Cada migracion nueva (`003_...`) se ejecuta igual, una vez, en orden.
 3. **Connect** (arriba) > **Session pooler**. Te muestra algo como
    `postgresql://postgres.abcd1234:[PASSWORD]@aws-0-sa-east-1.pooler.supabase.com:5432/postgres`.
    De ahi sacas las variables para Render:
@@ -22,6 +26,16 @@ El backend usa la BD Postgres de Supabase.
    Usa el **Session pooler** (puerto 5432), no la conexion directa (solo IPv6,
    Render no llega) ni el Transaction pooler (6543, rompe los prepared
    statements de Java).
+
+4. Fotos: **Project Settings > API Keys**. Copia la **Project URL**
+   (`https://abcd1234.supabase.co`) y crea/copia una **secret key** (`sb_secret_...`).
+   Para Render:
+   - `SUPABASE_URL=https://abcd1234.supabase.co`
+   - `SUPABASE_SECRET_KEY=sb_secret_...`
+
+   La secret key salta las reglas de seguridad de Supabase: va SOLO en el backend,
+   nunca en el front ni en git. El front sube fotos al backend, y el backend valida
+   que sea el anfitrion de la propiedad y que el archivo sea JPG, PNG o WebP (max 5 MB).
 
 Plan free: 500 MB de BD y 1 GB de archivos (para la galeria). El proyecto se
 pausa si pasa 7 dias sin uso; se reactiva desde el panel.

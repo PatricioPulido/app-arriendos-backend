@@ -31,6 +31,23 @@ La app usa PostgreSQL: Supabase en produccion y un Postgres en Docker en tu PC.
 Si el front dice "No se pudo conectar con el servidor", el back no esta
 corriendo: revisa `http://localhost:8080/actuator/health`.
 
+## Fotos en local
+
+Sin `SUPABASE_URL` en el `.env`, las fotos que subas se guardan en la carpeta
+`uploads/` del backend y se ven en `http://localhost:8080/uploads/...`. Esa carpeta
+no se sube a git. Si quieres probar con Supabase Storage desde tu PC, pon
+`SUPABASE_URL` y `SUPABASE_SECRET_KEY` en el `.env`.
+
+## Aplicar una migracion nueva
+
+Postgres solo ejecuta `db/migrations` cuando crea la BD por primera vez. Si ya la
+tenias creada y aparece un archivo nuevo (por ejemplo `002_anfitriones_y_galeria.sql`):
+
+- Lo mas simple si no tienes datos que cuidar: `docker compose down -v` y luego
+  `docker compose up -d` (borra la BD local y la crea de nuevo con todo).
+- Para conservar los datos, en PowerShell desde la carpeta del backend:
+  `Get-Content db\migrations\002_anfitriones_y_galeria.sql | docker compose exec -T postgres psql -U arriendos -d arriendos`
+
 ## Ver la BD
 
 Cualquier cliente Postgres sirve (DBeaver, pgAdmin, o la extension de VS Code):

@@ -39,4 +39,8 @@
             <choose><when test="activo">1</when><otherwise>0</otherwise></choose>)
   </insert>
 
+  <update id="updateRol">
+    UPDATE USUARIOS SET ROL = #{rol} WHERE ID_USUARIO = #{id}
+  </update>
+
 </mapper>

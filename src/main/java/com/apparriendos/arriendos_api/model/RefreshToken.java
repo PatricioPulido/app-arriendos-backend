@@ -11,4 +11,5 @@ public class RefreshToken {
     private String tokenHash;
     private LocalDateTime expira;
     private boolean revocado;
+    private LocalDateTime fechaRevocacion;
 }

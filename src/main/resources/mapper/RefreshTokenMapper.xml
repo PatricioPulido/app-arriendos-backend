@@ -10,10 +10,11 @@
     <result column="TOKEN_HASH" property="tokenHash"/>
     <result column="EXPIRA" property="expira"/>
     <result column="REVOCADO" property="revocado"/>
+    <result column="FECHA_REVOCACION" property="fechaRevocacion"/>
   </resultMap>
 
   <select id="findByHash" resultMap="RefreshTokenMap">
-    SELECT ID_REFRESH_TOKEN, ID_USUARIO, TOKEN_HASH, EXPIRA, REVOCADO
+    SELECT ID_REFRESH_TOKEN, ID_USUARIO, TOKEN_HASH, EXPIRA, REVOCADO, FECHA_REVOCACION
     FROM REFRESH_TOKENS WHERE TOKEN_HASH = #{tokenHash}
   </select>
 
@@ -26,11 +27,13 @@
   </insert>
 
   <update id="revoke">
-    UPDATE REFRESH_TOKENS SET REVOCADO = 1 WHERE ID_REFRESH_TOKEN = #{id}
+    UPDATE REFRESH_TOKENS SET REVOCADO = 1, FECHA_REVOCACION = CURRENT_TIMESTAMP
+    WHERE ID_REFRESH_TOKEN = #{id} AND REVOCADO = 0
   </update>
 
   <update id="revokeAllForUser">
-    UPDATE REFRESH_TOKENS SET REVOCADO = 1 WHERE ID_USUARIO = #{idUsuario} AND REVOCADO = 0
+    UPDATE REFRESH_TOKENS SET REVOCADO = 1, FECHA_REVOCACION = CURRENT_TIMESTAMP
+    WHERE ID_USUARIO = #{idUsuario} AND REVOCADO = 0
   </update>
 
 </mapper>
