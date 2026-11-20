@@ -10,4 +10,5 @@ public interface UsuarioMapper {
     Usuario findById(@Param("id") Long id);
     int countByRol(@Param("rol") String rol);
     void insert(Usuario usuario);
+    void updateRol(@Param("id") Long id, @Param("rol") String rol);
 }

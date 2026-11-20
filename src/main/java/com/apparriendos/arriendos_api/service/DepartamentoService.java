@@ -1,75 +1,103 @@
 package com.apparriendos.arriendos_api.service;
 
+import com.apparriendos.arriendos_api.error.ApiException;
 import com.apparriendos.arriendos_api.mapper.DepartamentoMapper;
+import com.apparriendos.arriendos_api.mapper.ImagenMapper;
 import com.apparriendos.arriendos_api.model.Departamento;
-import org.springframework.http.ResponseEntity;
+import com.apparriendos.arriendos_api.model.FiltroDepartamentos;
+import com.apparriendos.arriendos_api.model.Imagen;
+import com.apparriendos.arriendos_api.security.UsuarioActual;
+import com.apparriendos.arriendos_api.storage.ImageStorage;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
-import java.util.Map;
 
+/**
+ * Propiedades. Las crea un ANFITRION (o ADMIN) y solo su dueno o un ADMIN puede editarlas
+ * o borrarlas. Los errores de BD los traduce AuthExceptionHandler -> DbErrorHandler.
+ */
 @Service
 public class DepartamentoService {
 
     private final DepartamentoMapper mapper;
-    private final DbErrorHandler dbErrorHandler;
+    private final ImagenMapper imagenMapper;
+    private final ImageStorage storage;
 
-    public DepartamentoService(DepartamentoMapper mapper, DbErrorHandler dbErrorHandler) {
+    public DepartamentoService(DepartamentoMapper mapper, ImagenMapper imagenMapper, ImageStorage storage) {
         this.mapper = mapper;
-        this.dbErrorHandler = dbErrorHandler;
+        this.imagenMapper = imagenMapper;
+        this.storage = storage;
     }
 
-    public ResponseEntity<?> getAll() {
-        try {
-            List<Departamento> list = mapper.findAll();
-            return ResponseEntity.ok(list);
-        } catch (Exception ex) {
-            return dbErrorHandler.handleException(ex, "Obtener todos los departamentos");
+    public List<Departamento> buscar(FiltroDepartamentos filtro) {
+        if (filtro.llegada() != null && filtro.salida() != null && !filtro.llegada().isBefore(filtro.salida())) {
+            throw ApiException.invalido("La fecha de salida debe ser posterior a la de llegada");
         }
+        return mapper.buscar(filtro);
     }
 
-    public ResponseEntity<?> getById(Long id) {
-        try {
-            Departamento dep = mapper.findById(id);
-            if (dep == null) {
-                return ResponseEntity.status(404)
-                        .body(Map.of("mensaje", "Departamento no encontrado con id " + id));
-            }
-            return ResponseEntity.ok(dep);
-        } catch (Exception ex) {
-            return dbErrorHandler.handleException(ex, "Obtener departamento por id");
+    public Departamento detalle(Long id) {
+        Departamento d = mapper.findById(id);
+        if (d == null) throw ApiException.noEncontrado("Departamento no encontrado con id " + id);
+        d.setImagenes(imagenMapper.findByDepartamento(id));
+        return d;
+    }
+
+    /** Propiedades del anfitrion logueado, con sus fotos. */
+    public List<Departamento> mios(UsuarioActual usuario) {
+        List<Departamento> lista = mapper.findByAnfitrion(usuario.idUsuario());
+        lista.forEach(d -> d.setImagenes(imagenMapper.findByDepartamento(d.getIdDepartamento())));
+        return lista;
+    }
+
+    @Transactional
+    public Departamento crear(Departamento d, UsuarioActual usuario) {
+        d.setIdDepartamento(null); // lo asigna la secuencia
+        d.setIdAnfitrion(usuario.idUsuario());
+        mapper.insert(d);
+        return detalle(d.getIdDepartamento());
+    }
+
+    @Transactional
+    public Departamento actualizar(Long id, Departamento cambios, UsuarioActual usuario) {
+        buscarEditable(id, usuario);
+        cambios.setIdDepartamento(id);
+        mapper.update(cambios);
+        return detalle(id);
+    }
+
+    @Transactional
+    public void eliminar(Long id, UsuarioActual usuario) {
+        buscarEditable(id, usuario);
+        List<String> rutas = imagenMapper.findByDepartamento(id).stream().map(Imagen::getRuta).toList();
+        mapper.delete(id); // las filas de fotos se borran en cascada
+        // Los archivos se borran solo si la transaccion se confirma
+        if (!rutas.isEmpty()) despuesDeConfirmar(() -> storage.borrar(rutas));
+    }
+
+    /** Devuelve la propiedad si existe y el usuario puede editarla; si no, 404 o 403. */
+    public Departamento buscarEditable(Long id, UsuarioActual usuario) {
+        Departamento d = mapper.findById(id);
+        if (d == null) throw ApiException.noEncontrado("Departamento no encontrado con id " + id);
+        if (!usuario.puedeEditar(d.getIdAnfitrion())) {
+            throw ApiException.prohibido("Solo el anfitrión de esta propiedad puede modificarla");
         }
+        return d;
     }
 
-    public ResponseEntity<?> create(Departamento departamento) {
-        try {
-            departamento.setIdDepartamento(null); // el id lo asigna la secuencia
-            mapper.insert(departamento);
-            return ResponseEntity.status(201).body(Map.of(
-                    "mensaje", "Departamento " + departamento.getNombre() + " creado con éxito",
-                    "id", departamento.getIdDepartamento()
-            ));
-        } catch (Exception ex) {
-            return dbErrorHandler.handleException(ex, "Crear departamento");
-        }
-    }
-
-    public ResponseEntity<?> update(Long id, Departamento departamento) {
-        try {
-            departamento.setIdDepartamento(id);
-            mapper.update(departamento);
-            return ResponseEntity.ok(Map.of("mensaje", "Departamento actualizado con éxito"));
-        } catch (Exception ex) {
-            return dbErrorHandler.handleException(ex, "Actualizar departamento");
-        }
-    }
-
-    public ResponseEntity<?> delete(Long id) {
-        try {
-            mapper.delete(id);
-            return ResponseEntity.ok(Map.of("mensaje", "Departamento eliminado con éxito"));
-        } catch (Exception ex) {
-            return dbErrorHandler.handleException(ex, "Eliminar departamento");
+    static void despuesDeConfirmar(Runnable accion) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    accion.run();
+                }
+            });
+        } else {
+            accion.run();
         }
     }
 }

@@ -18,6 +18,12 @@ services:
         sync: false
       - key: DB_POOL_SIZE
         value: "3"
+      # Fotos en Supabase Storage (ver docs/DESPLIEGUE.md). Sin ellas se guardan en el disco
+      # de Render, que se BORRA en cada deploy.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: AUTH_COOKIE_SECURE

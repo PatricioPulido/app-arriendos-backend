@@ -1,6 +1,7 @@
 package com.apparriendos.arriendos_api.mapper;
 
 import com.apparriendos.arriendos_api.model.Reserva;
+import com.apparriendos.arriendos_api.model.ReservaAnfitrion;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -12,6 +13,9 @@ public interface ReservaMapper {
     List<Reserva> findAll();
     Reserva findById(@Param("id") Long id);
     List<Reserva> findByArrendatario(@Param("idArrendatario") Long idArrendatario);
+
+    List<ReservaAnfitrion> findByAnfitrion(@Param("idAnfitrion") Long idAnfitrion);
+    void updateEstado(@Param("id") Long id, @Param("estado") String estado);
 
     // inserta y deja el id en la propiedad (usando selectKey en XML)
     void insert(Reserva reserva);

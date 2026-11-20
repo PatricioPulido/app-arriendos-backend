@@ -18,7 +18,8 @@ RUN mvn -B -q package -DskipTests && cp target/*.jar app.jar
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 # Usuario sin privilegios
-RUN useradd --system --uid 1001 spring
+RUN useradd --system --uid 1001 spring \
+    && mkdir /app/uploads && chown spring /app/uploads   # fotos si no se usa Supabase Storage
 COPY --from=build /app/app.jar app.jar
 USER spring
 

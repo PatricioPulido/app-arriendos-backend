@@ -5,66 +5,124 @@
 
 <mapper namespace="com.apparriendos.arriendos_api.mapper.DepartamentoMapper">
 
-   <!-- RESULT MAP opcional (puedes usar resultType en selects si prefieres) -->
     <resultMap id="DepartamentoMap" type="com.apparriendos.arriendos_api.model.Departamento">
         <id property="idDepartamento" column="ID_DEPARTAMENTO"/>
         <result property="nombre" column="NOMBRE"/>
+        <result property="descripcion" column="DESCRIPCION"/>
         <result property="numero" column="NUMERO"/>
         <result property="direccion" column="DIRECCION"/>
         <result property="metrosCuadrados" column="METROS_CUADRADOS"/>
         <result property="tipologia" column="TIPOLOGIA"/>
-        <result property="imagenUrl" column="IMAGEN_URL"/>
+        <result property="capacidad" column="CAPACIDAD"/>
+        <result property="dormitorios" column="DORMITORIOS"/>
+        <result property="banos" column="BANOS"/>
+        <result property="idZona" column="ID_ZONA"/>
+        <result property="nombreZona" column="NOMBRE_ZONA"/>
+        <result property="idCiudad" column="ID_CIUDAD"/>
+        <result property="nombreCiudad" column="NOMBRE_CIUDAD"/>
+        <result property="idAnfitrion" column="ID_ANFITRION"/>
+        <result property="nombreAnfitrion" column="NOMBRE_ANFITRION"/>
+        <result property="imagenUrl" column="PORTADA"/>
         <result property="precio" column="PRECIO"/>
-        <!-- columnas adicionales en la tabla que no tienes en el POJO se ignoran -->
-        <!-- si luego agregas campos al POJO, mapéalos aquí -->
     </resultMap>
 
+    <!-- Columnas comunes. La portada es la primera foto de la galeria o, si no hay, imagen_url. -->
+    <sql id="columnas">
+        d.ID_DEPARTAMENTO, d.NOMBRE, d.DESCRIPCION, d.NUMERO, d.DIRECCION, d.METROS_CUADRADOS,
+        d.TIPOLOGIA, d.CAPACIDAD, d.DORMITORIOS, d.BANOS, d.ID_ZONA, d.ID_ANFITRION, d.PRECIO,
+        z.NOMBRE AS NOMBRE_ZONA, c.ID_CIUDAD, c.NOMBRE AS NOMBRE_CIUDAD,
+        COALESCE((SELECT i.URL FROM DEPARTAMENTO_IMAGENES i
+                  WHERE i.ID_DEPARTAMENTO = d.ID_DEPARTAMENTO
+                  ORDER BY i.ORDEN, i.ID_IMAGEN LIMIT 1), d.IMAGEN_URL) AS PORTADA
+    </sql>
+    <sql id="desde">
+        FROM DEPARTAMENTOS d
+        LEFT JOIN ZONA z ON z.ID_ZONA = d.ID_ZONA
+        LEFT JOIN CIUDAD c ON c.ID_CIUDAD = z.ID_CIUDAD
+    </sql>
+
+    <sql id="sinTildes">TRANSLATE(LOWER(${col}), 'áéíóúüñ', 'aeiouun')</sql>
+    <sql id="patronSinTildes">TRANSLATE(LOWER(#{patron}), 'áéíóúüñ', 'aeiouun')</sql>
+
     <select id="findAll" resultMap="DepartamentoMap">
-        SELECT
-          ID_DEPARTAMENTO,
-          NOMBRE,
-          NUMERO,
-          DIRECCION,
-          METROS_CUADRADOS,
-          TIPOLOGIA,
-          IMAGEN_URL,
-          PRECIO
-        FROM DEPARTAMENTOS
+        SELECT <include refid="columnas"/> <include refid="desde"/>
+        ORDER BY d.ID_DEPARTAMENTO
     </select>
 
-    <select id="findById" parameterType="long" resultMap="DepartamentoMap">
-        SELECT
-          ID_DEPARTAMENTO,
-          NOMBRE,
-          NUMERO,
-          DIRECCION,
-          METROS_CUADRADOS,
-          TIPOLOGIA,
-          IMAGEN_URL,
-          PRECIO
-        FROM DEPARTAMENTOS
-        WHERE ID_DEPARTAMENTO = #{id}
+    <!-- Catalogo con filtros. Cada <if> es un filtro opcional (ver FiltroDepartamentos). -->
+    <select id="buscar" resultMap="DepartamentoMap">
+        SELECT <include refid="columnas"/> <include refid="desde"/>
+        <bind name="patron" value="f.textoLike()"/>
+        <where>
+            <if test="patron != null">
+                <!-- Sin tildes ni mayusculas: "vina" encuentra "Viña" -->
+                (<include refid="sinTildes"><property name="col" value="c.NOMBRE"/></include> LIKE <include refid="patronSinTildes"/>
+                 OR <include refid="sinTildes"><property name="col" value="z.NOMBRE"/></include> LIKE <include refid="patronSinTildes"/>
+                 OR <include refid="sinTildes"><property name="col" value="d.NOMBRE"/></include> LIKE <include refid="patronSinTildes"/>
+                 OR <include refid="sinTildes"><property name="col" value="d.DIRECCION"/></include> LIKE <include refid="patronSinTildes"/>)
+            </if>
+            <if test="f.idCiudad != null">AND c.ID_CIUDAD = #{f.idCiudad}</if>
+            <if test="f.idZona != null">AND d.ID_ZONA = #{f.idZona}</if>
+            <if test="f.precioMin != null">AND d.PRECIO &gt;= #{f.precioMin}</if>
+            <if test="f.precioMax != null">AND d.PRECIO &lt;= #{f.precioMax}</if>
+            <if test="f.huespedes != null">AND d.CAPACIDAD &gt;= #{f.huespedes}</if>
+            <if test="f.dormitorios != null">AND d.DORMITORIOS &gt;= #{f.dormitorios}</if>
+            <if test="f.llegada != null and f.salida != null">
+                AND NOT EXISTS (
+                    SELECT 1 FROM RESERVAS r
+                    WHERE r.ID_DEPARTAMENTO = d.ID_DEPARTAMENTO
+                      AND r.ESTADO &lt;&gt; 'CANCELADA'
+                      AND r.FECHA_INICIO &lt; #{f.salida}
+                      AND r.FECHA_FIN &gt; #{f.llegada})
+            </if>
+        </where>
+        <choose>
+            <when test="f.orden == 'precio_asc'">ORDER BY d.PRECIO ASC NULLS LAST, d.ID_DEPARTAMENTO</when>
+            <when test="f.orden == 'precio_desc'">ORDER BY d.PRECIO DESC NULLS LAST, d.ID_DEPARTAMENTO</when>
+            <otherwise>ORDER BY d.FECHA_CREACION DESC, d.ID_DEPARTAMENTO DESC</otherwise>
+        </choose>
+        LIMIT #{f.limite} OFFSET #{f.offset}
+    </select>
+
+    <select id="findByAnfitrion" resultMap="DepartamentoMap">
+        SELECT <include refid="columnas"/> <include refid="desde"/>
+        WHERE d.ID_ANFITRION = #{idAnfitrion}
+        ORDER BY d.FECHA_CREACION DESC
+    </select>
+
+    <select id="findById" resultMap="DepartamentoMap">
+        SELECT <include refid="columnas"/>,
+               (SELECT a.NOMBRE FROM USUARIOS u JOIN ARRENDATARIOS a ON a.ID_ARRENDATARIO = u.ID_ARRENDATARIO
+                WHERE u.ID_USUARIO = d.ID_ANFITRION) AS NOMBRE_ANFITRION
+        <include refid="desde"/>
+        WHERE d.ID_DEPARTAMENTO = #{id}
     </select>
 
     <insert id="insert" parameterType="com.apparriendos.arriendos_api.model.Departamento">
-        <!-- selectKey: obtiene el nextval y lo asigna a idDepartamento antes del INSERT -->
         <selectKey keyProperty="idDepartamento" resultType="long" order="BEFORE">
             SELECT nextval('seq_departamentos')
         </selectKey>
-
         INSERT INTO DEPARTAMENTOS
-            (ID_DEPARTAMENTO, NOMBRE, NUMERO, DIRECCION, METROS_CUADRADOS, TIPOLOGIA, IMAGEN_URL, PRECIO)
+            (ID_DEPARTAMENTO, NOMBRE, DESCRIPCION, NUMERO, DIRECCION, METROS_CUADRADOS, TIPOLOGIA,
+             CAPACIDAD, DORMITORIOS, BANOS, ID_ZONA, ID_ANFITRION, IMAGEN_URL, PRECIO)
         VALUES
-            (#{idDepartamento}, #{nombre}, #{numero}, #{direccion}, #{metrosCuadrados}, #{tipologia}, #{imagenUrl}, #{precio})
+            (#{idDepartamento}, #{nombre}, #{descripcion}, #{numero}, #{direccion}, #{metrosCuadrados}, #{tipologia},
+             #{capacidad}, #{dormitorios}, #{banos}, #{idZona}, #{idAnfitrion}, #{imagenUrl}, #{precio})
     </insert>
 
+    <!-- El dueno (ID_ANFITRION) no se cambia al editar -->
     <update id="update" parameterType="com.apparriendos.arriendos_api.model.Departamento">
         UPDATE DEPARTAMENTOS
         SET NOMBRE = #{nombre},
+            DESCRIPCION = #{descripcion},
             NUMERO = #{numero},
             DIRECCION = #{direccion},
             METROS_CUADRADOS = #{metrosCuadrados},
             TIPOLOGIA = #{tipologia},
+            CAPACIDAD = #{capacidad},
+            DORMITORIOS = #{dormitorios},
+            BANOS = #{banos},
+            ID_ZONA = #{idZona},
             IMAGEN_URL = #{imagenUrl},
             PRECIO = #{precio}
         WHERE ID_DEPARTAMENTO = #{idDepartamento}
