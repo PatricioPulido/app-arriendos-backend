@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.HexFormat;
@@ -34,6 +35,12 @@ public class AuthService {
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
     private static final String CREDENCIALES_INVALIDAS = "Email o contraseña incorrectos";
     private static final SecureRandom RANDOM = new SecureRandom();
+    /**
+     * Si dos pestanas renuevan la sesion a la vez, la segunda llega con el token que la
+     * primera acaba de rotar. Dentro de esta ventana no se toma como robo: se responde 409
+     * y el front reintenta con la cookie nueva.
+     */
+    static final Duration GRACIA_ROTACION = Duration.ofSeconds(20);
 
     private final UsuarioMapper usuarioMapper;
     private final RefreshTokenMapper refreshTokenMapper;
@@ -56,7 +63,10 @@ public class AuthService {
         this.dummyHash = passwordEncoder.encode("relleno-para-tiempo-constante");
     }
 
-    /** Registro publico: crea el arrendatario y su usuario con rol ARRENDATARIO. */
+    /**
+     * Registro publico. Toda cuenta tiene su ficha de arrendatario (nombre, telefono) para poder
+     * reservar; el tipo de cuenta decide el rol: HUESPED -> ARRENDATARIO, ANFITRION -> ANFITRION.
+     */
     @Transactional
     public Tokens register(RegisterRequest req) {
         String email = req.email().trim().toLowerCase();
@@ -74,12 +84,12 @@ public class AuthService {
         Usuario u = new Usuario();
         u.setEmail(email);
         u.setPasswordHash(passwordEncoder.encode(req.password()));
-        u.setRol(Rol.ARRENDATARIO);
+        u.setRol(req.tipoCuenta() == null ? Rol.ARRENDATARIO : req.tipoCuenta().rol());
         u.setIdArrendatario(arr.getIdArrendatario());
         u.setActivo(true);
         usuarioMapper.insert(u);
 
-        logger.info("Nuevo usuario registrado id={}", u.getIdUsuario());
+        logger.info("Nuevo usuario registrado id={} rol={}", u.getIdUsuario(), u.getRol());
         return issueTokens(u);
     }
 
@@ -111,6 +121,10 @@ public class AuthService {
             throw new AuthException(HttpStatus.UNAUTHORIZED, "Sesión expirada");
         }
         if (stored.isRevocado()) {
+            if (stored.getFechaRevocacion() != null
+                    && stored.getFechaRevocacion().isAfter(LocalDateTime.now().minus(GRACIA_ROTACION))) {
+                throw new AuthException(HttpStatus.CONFLICT, "La sesión se renovó en otra pestaña");
+            }
             logger.warn("Refresh token reutilizado para usuario id={}; se cierran todas sus sesiones", stored.getIdUsuario());
             refreshTokenMapper.revokeAllForUser(stored.getIdUsuario());
             throw new AuthException(HttpStatus.UNAUTHORIZED, "Sesión expirada");
@@ -122,7 +136,27 @@ public class AuthService {
         if (u == null || !u.isActivo()) {
             throw new AuthException(HttpStatus.UNAUTHORIZED, "Sesión expirada");
         }
-        refreshTokenMapper.revoke(stored.getIdRefreshToken());
+        if (refreshTokenMapper.revoke(stored.getIdRefreshToken()) == 0) {
+            // Otra peticion lo roto entre la lectura y este UPDATE
+            throw new AuthException(HttpStatus.CONFLICT, "La sesión se renovó en otra pestaña");
+        }
+        return issueTokens(u);
+    }
+
+    /**
+     * Un huesped pasa a ser anfitrion (como "Hazte anfitrion" de Airbnb). Entrega tokens nuevos
+     * con el rol actualizado y revoca el refresh token que traia.
+     */
+    @Transactional
+    public Tokens hacermeAnfitrion(Long idUsuario, String rawRefresh) {
+        Usuario u = usuarioMapper.findById(idUsuario);
+        if (u == null || !u.isActivo()) throw new AuthException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado");
+        if (u.getRol() == Rol.ARRENDATARIO) {
+            usuarioMapper.updateRol(u.getIdUsuario(), Rol.ANFITRION.name());
+            u.setRol(Rol.ANFITRION);
+            logger.info("Usuario id={} ahora es ANFITRION", u.getIdUsuario());
+        }
+        logout(rawRefresh);
         return issueTokens(u);
     }
 

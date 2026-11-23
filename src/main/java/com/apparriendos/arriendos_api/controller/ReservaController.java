@@ -1,6 +1,8 @@
 package com.apparriendos.arriendos_api.controller;
 
 import com.apparriendos.arriendos_api.model.Reserva;
+import com.apparriendos.arriendos_api.model.ReservaAnfitrion;
+import com.apparriendos.arriendos_api.security.UsuarioActual;
 import com.apparriendos.arriendos_api.security.JwtService;
 import com.apparriendos.arriendos_api.service.ReservaService;
 import jakarta.validation.Valid;
@@ -30,12 +32,31 @@ public class ReservaController {
         return service.getByArrendatario(idArrendatario);
     }
 
+    /** Reservas recibidas en mis propiedades (ANFITRION). */
+    @GetMapping("/anfitrion")
+    public List<ReservaAnfitrion> deMisPropiedades(@AuthenticationPrincipal Jwt jwt) {
+        return service.getByAnfitrion(UsuarioActual.de(jwt).idUsuario());
+    }
+
+    /** El anfitrion confirma o rechaza. Body: {"estado": "CONFIRMADA" | "CANCELADA" | "FINALIZADA"} */
+    @PatchMapping("/{id}/estado")
+    public Map<String, String> cambiarEstado(@PathVariable Long id, @RequestBody Map<String, String> body,
+                                             @AuthenticationPrincipal Jwt jwt) {
+        return service.cambiarEstadoComoAnfitrion(id, body.get("estado"), UsuarioActual.de(jwt));
+    }
+
+    /** El huesped cancela una reserva suya. */
+    @PatchMapping("/{id}/cancelar")
+    public Map<String, String> cancelar(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        return service.cancelarComoHuesped(id, arrendatarioDe(jwt));
+    }
+
     // Solo ADMIN
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(@PathVariable Long id) { return service.getById(id); }
 
     /**
-     * ADMIN puede reservar para cualquier arrendatario. Un ARRENDATARIO siempre reserva
+     * ADMIN puede reservar para cualquier arrendatario. Un huesped o anfitrion siempre reserva
      * a su propio nombre, aunque envie otro idArrendatario, y la reserva queda PENDIENTE.
      */
     @PostMapping
@@ -44,6 +65,9 @@ public class ReservaController {
             Long propio = arrendatarioDe(jwt);
             if (propio == null) {
                 return ResponseEntity.status(403).body(Map.of("mensaje", "Tu usuario no tiene un arrendatario asociado"));
+            }
+            if (service.esDueno(reserva.getIdDepartamento(), UsuarioActual.de(jwt).idUsuario())) {
+                return ResponseEntity.badRequest().body(Map.of("mensaje", "No puedes reservar tu propia propiedad"));
             }
             reserva.setIdArrendatario(propio);
             reserva.setEstado("PENDIENTE");

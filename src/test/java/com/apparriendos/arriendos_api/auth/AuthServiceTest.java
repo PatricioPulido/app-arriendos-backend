@@ -84,6 +84,7 @@ class AuthServiceTest {
         rt.setExpira(LocalDateTime.now().plusDays(1));
         when(tokens.findByHash(AuthService.sha256("viejo"))).thenReturn(rt);
         when(usuarios.findById(7L)).thenReturn(usuario);
+        when(tokens.revoke(3L)).thenReturn(1);
 
         var result = service.refresh("viejo");
 
@@ -97,6 +98,7 @@ class AuthServiceTest {
         rt.setIdRefreshToken(3L);
         rt.setIdUsuario(7L);
         rt.setRevocado(true);
+        rt.setFechaRevocacion(LocalDateTime.now().minusHours(1));
         rt.setExpira(LocalDateTime.now().plusDays(1));
         when(tokens.findByHash(AuthService.sha256("robado"))).thenReturn(rt);
 
@@ -118,7 +120,7 @@ class AuthServiceTest {
     void registroCreaArrendatarioYUsuario() {
         doAnswer(inv -> { inv.<com.apparriendos.arriendos_api.model.Arrendatario>getArgument(0).setIdArrendatario(50L); return null; })
                 .when(arrendatarios).insert(any());
-        var req = new AuthDtos.RegisterRequest("Ana", "Pérez", "Ana@Test.cl", null, "clave-segura-1");
+        var req = new AuthDtos.RegisterRequest("Ana", "Pérez", "Ana@Test.cl", null, "clave-segura-1", null);
         service.register(req);
         verify(usuarios).insert(argThat(u -> u.getRol() == Rol.ARRENDATARIO
                 && u.getIdArrendatario() == 50L
@@ -129,8 +131,55 @@ class AuthServiceTest {
     @Test
     void registroConEmailRepetidoFalla() {
         when(usuarios.findByEmail("ana@test.cl")).thenReturn(usuario);
-        var req = new AuthDtos.RegisterRequest("Ana", "Pérez", "ana@test.cl", null, "clave-segura-1");
+        var req = new AuthDtos.RegisterRequest("Ana", "Pérez", "ana@test.cl", null, "clave-segura-1", null);
         assertThatThrownBy(() -> service.register(req)).isInstanceOf(AuthException.class);
         verify(arrendatarios, never()).insert(any());
+    }
+
+    @Test
+    void refreshDeOtraPestanaRecienRotadoNoCierraSesiones() {
+        RefreshToken rt = new RefreshToken();
+        rt.setIdRefreshToken(3L);
+        rt.setIdUsuario(7L);
+        rt.setRevocado(true);
+        rt.setFechaRevocacion(LocalDateTime.now().minusSeconds(2));
+        rt.setExpira(LocalDateTime.now().plusDays(1));
+        when(tokens.findByHash(AuthService.sha256("recien"))).thenReturn(rt);
+
+        assertThatThrownBy(() -> service.refresh("recien"))
+                .isInstanceOfSatisfying(AuthException.class,
+                        e -> assertThat(e.getStatus()).isEqualTo(org.springframework.http.HttpStatus.CONFLICT));
+        verify(tokens, never()).revokeAllForUser(any());
+    }
+
+    @Test
+    void refreshQuePierdeLaCarreraDa409() {
+        RefreshToken rt = new RefreshToken();
+        rt.setIdRefreshToken(3L);
+        rt.setIdUsuario(7L);
+        rt.setExpira(LocalDateTime.now().plusDays(1));
+        when(tokens.findByHash(AuthService.sha256("viejo"))).thenReturn(rt);
+        when(usuarios.findById(7L)).thenReturn(usuario);
+        when(tokens.revoke(3L)).thenReturn(0);
+
+        assertThatThrownBy(() -> service.refresh("viejo")).isInstanceOf(AuthException.class);
+        verify(tokens, never()).insert(any());
+    }
+
+    @Test
+    void registroComoAnfitrion() {
+        var req = new AuthDtos.RegisterRequest("Ana", "Pérez", "ana@test.cl", null, "clave-segura-1",
+                com.apparriendos.arriendos_api.model.TipoCuenta.ANFITRION);
+        service.register(req);
+        verify(arrendatarios).insert(any()); // tambien puede reservar
+        verify(usuarios).insert(argThat(u -> u.getRol() == Rol.ANFITRION));
+    }
+
+    @Test
+    void huespedSeHaceAnfitrion() {
+        when(usuarios.findById(7L)).thenReturn(usuario);
+        var result = service.hacermeAnfitrion(7L, null);
+        verify(usuarios).updateRol(7L, "ANFITRION");
+        assertThat(result.body().usuario().rol()).isEqualTo(Rol.ANFITRION);
     }
 }

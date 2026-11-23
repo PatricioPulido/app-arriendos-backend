@@ -38,8 +38,11 @@ services:
     environment:
       # Dentro de docker la BD no esta en localhost sino en el servicio postgres
       DB_URL: jdbc:postgresql://postgres:5432/arriendos
+    volumes:
+      - uploads-data:/app/uploads   # fotos locales (si no defines SUPABASE_URL)
     ports:
       - "127.0.0.1:8080:8080"
 
 volumes:
   postgres-data:
+  uploads-data:

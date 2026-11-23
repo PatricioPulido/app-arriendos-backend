@@ -10,7 +10,9 @@ import com.apparriendos.arriendos_api.security.JwtConfig;
 import com.apparriendos.arriendos_api.security.JwtService;
 import com.apparriendos.arriendos_api.security.SecurityConfig;
 import com.apparriendos.arriendos_api.service.ArrendatarioService;
+import com.apparriendos.arriendos_api.service.DbErrorHandler;
 import com.apparriendos.arriendos_api.service.DepartamentoService;
+import com.apparriendos.arriendos_api.service.ImagenService;
 import com.apparriendos.arriendos_api.service.ReservaService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,7 +36,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = {DepartamentoController.class, ArrendatarioController.class,
         ReservaController.class, AuthController.class})
-@Import({SecurityConfig.class, JwtConfig.class, JwtService.class, AuthExceptionHandler.class})
+@Import({SecurityConfig.class, JwtConfig.class, JwtService.class, AuthExceptionHandler.class,
+        DbErrorHandler.class, LoginRateLimiter.class})
 @TestPropertySource(properties = "app.jwt.secret=clave-de-prueba-de-al-menos-32-caracteres!!")
 class SecurityRulesTest {
 
@@ -42,17 +45,19 @@ class SecurityRulesTest {
     @Autowired JwtService jwtService;
 
     @MockitoBean DepartamentoService departamentoService;
+    @MockitoBean ImagenService imagenService;
     @MockitoBean ArrendatarioService arrendatarioService;
     @MockitoBean ReservaService reservaService;
     @MockitoBean AuthService authService;
 
     private String adminToken;
     private String arrendatarioToken;
+    private String anfitrionToken;
 
     @BeforeEach
     void setUp() {
-        doReturn(ResponseEntity.ok(List.of())).when(departamentoService).getAll();
-        doReturn(ResponseEntity.status(201).build()).when(departamentoService).create(any());
+        when(departamentoService.buscar(any())).thenReturn(List.of());
+        when(departamentoService.crear(any(), any())).thenReturn(new com.apparriendos.arriendos_api.model.Departamento());
         doReturn(ResponseEntity.ok(List.of())).when(arrendatarioService).getAll();
         doReturn(ResponseEntity.status(201).build()).when(reservaService).create(any());
         doReturn(ResponseEntity.ok(List.of())).when(reservaService).getAll();
@@ -60,6 +65,7 @@ class SecurityRulesTest {
 
         adminToken = token(1L, Rol.ADMIN, null);
         arrendatarioToken = token(2L, Rol.ARRENDATARIO, 50L);
+        anfitrionToken = token(3L, Rol.ANFITRION, 60L);
     }
 
     private String token(Long id, Rol rol, Long idArrendatario) {
@@ -83,7 +89,7 @@ class SecurityRulesTest {
         mvc.perform(post("/api/departamentos").contentType(MediaType.APPLICATION_JSON).content(DEPTO))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.mensaje").exists());
-        verify(departamentoService, never()).create(any());
+        verify(departamentoService, never()).crear(any(), any());
     }
 
     @Test
@@ -91,7 +97,7 @@ class SecurityRulesTest {
         mvc.perform(post("/api/departamentos").header("Authorization", arrendatarioToken)
                         .contentType(MediaType.APPLICATION_JSON).content(DEPTO))
                 .andExpect(status().isForbidden());
-        verify(departamentoService, never()).create(any());
+        verify(departamentoService, never()).crear(any(), any());
     }
 
     @Test
@@ -169,5 +175,66 @@ class SecurityRulesTest {
     @Test
     void meRequiereToken() throws Exception {
         mvc.perform(get("/api/auth/me")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void anfitrionPuedeCrearDepartamentoASuNombre() throws Exception {
+        mvc.perform(post("/api/departamentos").header("Authorization", anfitrionToken)
+                        .contentType(MediaType.APPLICATION_JSON).content(DEPTO))
+                .andExpect(status().isCreated());
+        verify(departamentoService).crear(any(), argThat(u -> u.idUsuario() == 3L && !u.esAdmin()));
+    }
+
+    @Test
+    void misPropiedadesSoloParaAnfitrion() throws Exception {
+        mvc.perform(get("/api/departamentos/mios")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/departamentos/mios").header("Authorization", arrendatarioToken))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/departamentos/mios").header("Authorization", anfitrionToken))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void huespedNoPuedeSubirFotos() throws Exception {
+        var foto = new org.springframework.mock.web.MockMultipartFile("archivos", "a.jpg", "image/jpeg", new byte[]{1});
+        mvc.perform(multipart("/api/departamentos/1/imagenes").file(foto).header("Authorization", arrendatarioToken))
+                .andExpect(status().isForbidden());
+        mvc.perform(multipart("/api/departamentos/1/imagenes").file(foto).header("Authorization", anfitrionToken))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void anfitrionTambienPuedeReservarASuNombre() throws Exception {
+        String body = "{\"idDepartamento\":1,\"fechaInicio\":\"2026-12-01\",\"fechaFin\":\"2026-12-05\"}";
+        mvc.perform(post("/api/reservas").header("Authorization", anfitrionToken)
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isCreated());
+        ArgumentCaptor<Reserva> captor = ArgumentCaptor.forClass(Reserva.class);
+        verify(reservaService).create(captor.capture());
+        assertThat(captor.getValue().getIdArrendatario()).isEqualTo(60L);
+    }
+
+    @Test
+    void reservasRecibidasSoloParaAnfitrion() throws Exception {
+        mvc.perform(get("/api/reservas/anfitrion").header("Authorization", arrendatarioToken))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/reservas/anfitrion").header("Authorization", anfitrionToken))
+                .andExpect(status().isOk());
+        mvc.perform(patch("/api/reservas/5/estado").header("Authorization", arrendatarioToken)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"estado\":\"CONFIRMADA\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void demasiadosLoginsFallidosDan429() throws Exception {
+        when(authService.login(any(), any()))
+                .thenThrow(new AuthException(org.springframework.http.HttpStatus.UNAUTHORIZED, "Email o contraseña incorrectos"));
+        String body = "{\"email\":\"victima@test.cl\",\"password\":\"mala\"}";
+        for (int i = 0; i < LoginRateLimiter.MAX_POR_CUENTA; i++) {
+            mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andExpect(status().isUnauthorized());
+        }
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isTooManyRequests());
     }
 }

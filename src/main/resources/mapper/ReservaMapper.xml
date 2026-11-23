@@ -30,6 +30,24 @@
     ORDER BY FECHA_INICIO DESC
   </select>
 
+  <!-- Reservas de las propiedades de un anfitrion. El contacto del huesped solo se ve si esta CONFIRMADA. -->
+  <select id="findByAnfitrion" resultType="com.apparriendos.arriendos_api.model.ReservaAnfitrion">
+    SELECT r.ID_RESERVA, r.ID_DEPARTAMENTO, d.NOMBRE AS NOMBRE_DEPARTAMENTO,
+           r.FECHA_INICIO, r.FECHA_FIN, r.ESTADO,
+           a.NOMBRE || ' ' || a.APELLIDO AS NOMBRE_HUESPED,
+           CASE WHEN r.ESTADO = 'CONFIRMADA' THEN a.EMAIL END AS EMAIL_HUESPED,
+           CASE WHEN r.ESTADO = 'CONFIRMADA' THEN a.TELEFONO END AS TELEFONO_HUESPED
+    FROM RESERVAS r
+    JOIN DEPARTAMENTOS d ON d.ID_DEPARTAMENTO = r.ID_DEPARTAMENTO
+    JOIN ARRENDATARIOS a ON a.ID_ARRENDATARIO = r.ID_ARRENDATARIO
+    WHERE d.ID_ANFITRION = #{idAnfitrion}
+    ORDER BY r.FECHA_INICIO DESC
+  </select>
+
+  <update id="updateEstado">
+    UPDATE RESERVAS SET ESTADO = #{estado} WHERE ID_RESERVA = #{id}
+  </update>
+
   <insert id="insert" parameterType="com.apparriendos.arriendos_api.model.Reserva">
     <selectKey keyProperty="idReserva" resultType="long" order="BEFORE">
       SELECT nextval('seq_reservas')

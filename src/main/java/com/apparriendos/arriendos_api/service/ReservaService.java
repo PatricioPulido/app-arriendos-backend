@@ -4,6 +4,8 @@ import com.apparriendos.arriendos_api.mapper.ReservaMapper;
 import com.apparriendos.arriendos_api.mapper.DepartamentoMapper;
 import com.apparriendos.arriendos_api.mapper.ArrendatarioMapper;
 import com.apparriendos.arriendos_api.model.Reserva;
+import com.apparriendos.arriendos_api.error.ApiException;
+import com.apparriendos.arriendos_api.security.UsuarioActual;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -49,6 +51,54 @@ public class ReservaService {
             logger.error("Error listar reservas del arrendatario", ex);
             return dbErrorHandler.handleException(ex, "Listar mis reservas");
         }
+    }
+
+    /** Reservas recibidas en las propiedades del anfitrion. */
+    public List<com.apparriendos.arriendos_api.model.ReservaAnfitrion> getByAnfitrion(Long idAnfitrion) {
+        return mapper.findByAnfitrion(idAnfitrion);
+    }
+
+    /** true si la propiedad es de ese usuario (un anfitrion no reserva lo suyo). */
+    public boolean esDueno(Long idDepartamento, Long idUsuario) {
+        if (idDepartamento == null) return false;
+        var d = deptMapper.findById(idDepartamento);
+        return d != null && idUsuario.equals(d.getIdAnfitrion());
+    }
+
+    /**
+     * El anfitrion confirma, rechaza (CANCELADA) o finaliza una reserva de SU propiedad.
+     * ADMIN puede hacerlo en cualquiera.
+     */
+    @Transactional
+    public Map<String, String> cambiarEstadoComoAnfitrion(Long idReserva, String estado, UsuarioActual usuario) {
+        if (!List.of("CONFIRMADA", "CANCELADA", "FINALIZADA").contains(estado)) {
+            throw ApiException.invalido("Estado inválido: usa CONFIRMADA, CANCELADA o FINALIZADA");
+        }
+        Reserva r = mapper.findById(idReserva);
+        if (r == null) throw ApiException.noEncontrado("Reserva no encontrada");
+        var d = deptMapper.findById(r.getIdDepartamento());
+        if (d == null || !usuario.puedeEditar(d.getIdAnfitrion())) {
+            throw ApiException.prohibido("Esta reserva no es de una de tus propiedades");
+        }
+        if ("CONFIRMADA".equals(estado) && !"PENDIENTE".equals(r.getEstado())) {
+            throw ApiException.invalido("Solo se puede confirmar una reserva pendiente");
+        }
+        mapper.updateEstado(idReserva, estado);
+        return Map.of("mensaje", "Reserva " + estado.toLowerCase());
+    }
+
+    /** El huesped cancela una reserva suya que aun no termina. */
+    @Transactional
+    public Map<String, String> cancelarComoHuesped(Long idReserva, Long idArrendatario) {
+        Reserva r = mapper.findById(idReserva);
+        if (r == null || idArrendatario == null || !idArrendatario.equals(r.getIdArrendatario())) {
+            throw ApiException.noEncontrado("Reserva no encontrada");
+        }
+        if (!List.of("PENDIENTE", "CONFIRMADA").contains(r.getEstado())) {
+            throw ApiException.invalido("Esta reserva ya no se puede cancelar");
+        }
+        mapper.updateEstado(idReserva, "CANCELADA");
+        return Map.of("mensaje", "Reserva cancelada");
     }
 
     public ResponseEntity<?> getById(Long id) {
