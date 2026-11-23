@@ -13,6 +13,7 @@ El backend usa la BD Postgres de Supabase.
 2. En el proyecto: **SQL Editor** > New query > pega y ejecuta (Run), en este orden:
    - `db/migrations/001_esquema_inicial.sql`
    - `db/migrations/002_anfitriones_y_galeria.sql`
+   - `db/migrations/003_ciudades_turisticas.sql` (ciudades y zonas iniciales)
    - `db/supabase/storage_bucket.sql` (crea el bucket publico `departamentos` para las fotos)
 
    Cada migracion nueva (`003_...`) se ejecuta igual, una vez, en orden.
