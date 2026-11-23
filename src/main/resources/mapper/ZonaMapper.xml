@@ -27,7 +27,7 @@
 
   <insert id="insert" parameterType="com.apparriendos.arriendos_api.model.Zona">
     <selectKey keyProperty="idZona" resultType="long" order="BEFORE">
-      SELECT SEQ_ZONA.NEXTVAL FROM DUAL
+      SELECT nextval('seq_zona')
     </selectKey>
 
     INSERT INTO ZONA (ID_ZONA, NOMBRE, ID_CIUDAD)

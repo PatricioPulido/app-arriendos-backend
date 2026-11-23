@@ -1,20 +1,37 @@
-# Subir la API a internet (Render + Vercel)
+# Subir la app a internet (Supabase + Render + Vercel)
 
-Arquitectura: el front en Vercel reenvia `/api/*` al backend (ver `vercel.json`
-del repo del front). Para el navegador todo es el mismo dominio: la cookie del
-refresh funciona con `SameSite=Strict` y no hace falta CORS.
+Arquitectura: el front en Vercel reenvia `/api/*` al backend en Render (ver
+`vercel.json` del repo del front). Para el navegador todo es el mismo dominio:
+la cookie del refresh funciona con `SameSite=Strict` y no hace falta CORS.
+El backend usa la BD Postgres de Supabase.
 
-## 1. Base de datos
+## 1. Base de datos en Supabase
 
-Necesitas una BD accesible desde internet y aplicar `db/migrations` en orden
-(000, 001, 002). Ver la decision Oracle vs Postgres en el informe del proyecto.
+1. Crea cuenta en https://supabase.com con tu GitHub y un proyecto nuevo.
+   Region: **South America (Sao Paulo)**, la mas cercana a Chile. Guarda la
+   contrasena de la BD en un lugar seguro.
+2. En el proyecto: **SQL Editor** > New query > pega todo
+   `db/migrations/001_esquema_inicial.sql` > Run.
+3. **Connect** (arriba) > **Session pooler**. Te muestra algo como
+   `postgresql://postgres.abcd1234:[PASSWORD]@aws-0-sa-east-1.pooler.supabase.com:5432/postgres`.
+   De ahi sacas las variables para Render:
+   - `DB_URL=jdbc:postgresql://aws-0-sa-east-1.pooler.supabase.com:5432/postgres?sslmode=require`
+   - `DB_USERNAME=postgres.abcd1234`
+   - `DB_PASSWORD=` la contrasena de la BD
+   
+   Usa el **Session pooler** (puerto 5432), no la conexion directa (solo IPv6,
+   Render no llega) ni el Transaction pooler (6543, rompe los prepared
+   statements de Java).
+
+Plan free: 500 MB de BD y 1 GB de archivos (para la galeria). El proyecto se
+pausa si pasa 7 dias sin uso; se reactiva desde el panel.
 
 ## 2. Backend en Render
 
 1. Crea cuenta en https://render.com con tu GitHub.
 2. New > Blueprint > elige `app-arriendos-backend` (lee `render.yaml`).
-3. Completa las variables: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `DB_SCHEMA`,
-   `ADMIN_EMAIL`, `ADMIN_PASSWORD`. `JWT_SECRET` se genera solo.
+3. Completa `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` (paso 1), `ADMIN_EMAIL` y
+   `ADMIN_PASSWORD`. `JWT_SECRET` se genera solo.
 4. Espera el build (5-8 min la primera vez). Abre
    `https://<tu-servicio>.onrender.com/actuator/health`: debe decir `UP`.
 5. Entra con el admin desde el front y luego BORRA `ADMIN_EMAIL` y
@@ -33,8 +50,4 @@ Cuando tengas clientes, pasa a Starter (USD 7/mes).
 
 ## Probar la imagen Docker en tu PC
 
-    docker build -t arriendos-api .
-    docker run --env-file .env -e DB_URL=jdbc:oracle:thin:@//host.docker.internal:1521/XEPDB1 -p 8080:8080 arriendos-api
-
-(Dentro del contenedor `localhost` es el propio contenedor; por eso se usa
-`host.docker.internal` para llegar a la BD de tu PC.)
+    docker compose --profile app up -d --build

@@ -30,7 +30,7 @@
     <insert id="insert" parameterType="com.apparriendos.arriendos_api.model.Arrendatario">
         <!-- selectKey: obtiene nextval y lo asigna a idArrendatario antes del INSERT -->
         <selectKey keyProperty="idArrendatario" resultType="long" order="BEFORE">
-            SELECT SEQ_ARRENDATARIOS.NEXTVAL FROM DUAL
+            SELECT nextval('seq_arrendatarios')
         </selectKey>
 
         INSERT INTO ARRENDATARIOS
