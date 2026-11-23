@@ -24,6 +24,12 @@
     FROM RESERVAS WHERE ID_RESERVA = #{id}
   </select>
 
+  <select id="findByArrendatario" resultMap="ReservaMap">
+    SELECT ID_RESERVA, ID_DEPARTAMENTO, ID_ARRENDATARIO, FECHA_INICIO, FECHA_FIN, ESTADO
+    FROM RESERVAS WHERE ID_ARRENDATARIO = #{idArrendatario}
+    ORDER BY FECHA_INICIO DESC
+  </select>
+
   <insert id="insert" parameterType="com.apparriendos.arriendos_api.model.Reserva">
     <selectKey keyProperty="idReserva" resultType="long" order="BEFORE">
       SELECT SEQ_RESERVAS.NEXTVAL FROM DUAL

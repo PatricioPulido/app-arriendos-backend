@@ -39,6 +39,15 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+        <!-- Seguridad: login con JWT firmado por la propia API -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -61,6 +70,11 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- MyBatis Spring Boot -->
         <dependency>
             <groupId>org.mybatis.spring.boot</groupId>
@@ -68,11 +82,11 @@
             <version>3.0.3</version>
         </dependency>
 
-        <!-- OpenAPI/Swagger UI (springdoc 2.x para Spring Boot 3) -->
+        <!-- OpenAPI/Swagger UI (springdoc 2.8.x: 2.6 no funciona con Spring Boot 3.5) -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.6.0</version>
+            <version>2.8.9</version>
         </dependency>
     </dependencies>
 

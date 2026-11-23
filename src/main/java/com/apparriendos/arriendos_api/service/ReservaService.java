@@ -42,6 +42,15 @@ public class ReservaService {
         }
     }
 
+    public ResponseEntity<?> getByArrendatario(Long idArrendatario) {
+        try {
+            return ResponseEntity.ok(mapper.findByArrendatario(idArrendatario));
+        } catch (Exception ex) {
+            logger.error("Error listar reservas del arrendatario", ex);
+            return dbErrorHandler.handleException(ex, "Listar mis reservas");
+        }
+    }
+
     public ResponseEntity<?> getById(Long id) {
         try {
             Reserva r = mapper.findById(id);
