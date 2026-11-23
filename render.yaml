@@ -1,0 +1,40 @@
+# Blueprint de Render (https://render.com/docs/blueprint-spec).
+# En Render: New > Blueprint > elige este repo. Te pedira los valores marcados sync: false.
+services:
+  - type: web
+    name: arriendos-api
+    runtime: docker
+    plan: free            # se duerme tras 15 min sin uso; "starter" (USD 7/mes) no se duerme
+    region: oregon
+    branch: main
+    healthCheckPath: /actuator/health
+    autoDeploy: true
+    envVars:
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_SCHEMA
+        sync: false
+      - key: DB_POOL_SIZE
+        value: "3"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: AUTH_COOKIE_SECURE
+        value: "true"
+      - key: AUTH_COOKIE_SAME_SITE
+        value: Strict
+      # Solo hace falta si el front llama directo al back (sin el proxy de vercel.json)
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: SWAGGER_ENABLED
+        value: "false"
+      - key: EXPOSE_ERROR_DETAILS
+        value: "false"
+      # Primer admin: definir para el primer deploy y BORRAR despues
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
