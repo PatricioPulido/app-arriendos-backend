@@ -13,6 +13,8 @@
         <result property="direccion" column="DIRECCION"/>
         <result property="metrosCuadrados" column="METROS_CUADRADOS"/>
         <result property="tipologia" column="TIPOLOGIA"/>
+        <result property="imagenUrl" column="IMAGEN_URL"/>
+        <result property="precio" column="PRECIO"/>
         <!-- columnas adicionales en la tabla que no tienes en el POJO se ignoran -->
         <!-- si luego agregas campos al POJO, mapéalos aquí -->
     </resultMap>
@@ -24,7 +26,9 @@
           NUMERO,
           DIRECCION,
           METROS_CUADRADOS,
-          TIPOLOGIA
+          TIPOLOGIA,
+          IMAGEN_URL,
+          PRECIO
         FROM DEPARTAMENTOS
     </select>
 
@@ -35,7 +39,9 @@
           NUMERO,
           DIRECCION,
           METROS_CUADRADOS,
-          TIPOLOGIA
+          TIPOLOGIA,
+          IMAGEN_URL,
+          PRECIO
         FROM DEPARTAMENTOS
         WHERE ID_DEPARTAMENTO = #{id}
     </select>
@@ -47,9 +53,9 @@
         </selectKey>
 
         INSERT INTO DEPARTAMENTOS
-            (ID_DEPARTAMENTO, NOMBRE, NUMERO, DIRECCION, METROS_CUADRADOS, TIPOLOGIA)
+            (ID_DEPARTAMENTO, NOMBRE, NUMERO, DIRECCION, METROS_CUADRADOS, TIPOLOGIA, IMAGEN_URL, PRECIO)
         VALUES
-            (#{idDepartamento}, #{nombre}, #{numero}, #{direccion}, #{metrosCuadrados}, #{tipologia})
+            (#{idDepartamento}, #{nombre}, #{numero}, #{direccion}, #{metrosCuadrados}, #{tipologia}, #{imagenUrl}, #{precio})
     </insert>
 
     <update id="update" parameterType="com.apparriendos.arriendos_api.model.Departamento">
@@ -58,7 +64,9 @@
             NUMERO = #{numero},
             DIRECCION = #{direccion},
             METROS_CUADRADOS = #{metrosCuadrados},
-            TIPOLOGIA = #{tipologia}
+            TIPOLOGIA = #{tipologia},
+            IMAGEN_URL = #{imagenUrl},
+            PRECIO = #{precio}
         WHERE ID_DEPARTAMENTO = #{idDepartamento}
     </update>
 

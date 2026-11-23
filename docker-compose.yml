@@ -1,17 +1,18 @@
-version: '3.8'
+# Base de datos Oracle para desarrollo.
+# Copia .env.example a .env y define tus contrasenas antes de levantarlo:
+#   docker compose up -d
 services:
   oracle-xe:
-    image: gvenzl/oracle-xe
+    image: gvenzl/oracle-xe:21-slim
     container_name: bd-pato-oracle-xe
     ports:
-      - "1521:1521"
-      - "5500:5500"
+      - "127.0.0.1:1521:1521"
     environment:
-      ORACLE_PASSWORD: eithan2024
+      ORACLE_PASSWORD: ${ORACLE_PASSWORD:?Define ORACLE_PASSWORD en .env}
+      APP_USER: ${DB_USERNAME:-PATO}
+      APP_USER_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
+    volumes:
+      - oracle-data:/opt/oracle/oradata
 
-  app:
-    build: .
-    ports:
-      - "8080:8080"
-    depends_on:
-      - oracle-xe
+volumes:
+  oracle-data:
