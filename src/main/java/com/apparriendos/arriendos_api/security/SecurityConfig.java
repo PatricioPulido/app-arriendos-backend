@@ -21,7 +21,8 @@ import java.util.Map;
 
 /**
  * Reglas de acceso (que propiedad o reserva puede tocar cada uno se revisa en los servicios):
- * - Publico: catalogo (GET de departamentos, ciudades y zonas), fotos locales, login, registro, refresh.
+ * - Publico: catalogo (GET de departamentos, ciudades y zonas), fotos locales, login, registro, refresh,
+ *   recuperar y restablecer contraseña.
  * - ARRENDATARIO (huesped): reservar a su nombre, ver y cancelar las suyas, hacerse anfitrion.
  * - ANFITRION: lo del huesped + publicar/editar SUS propiedades y fotos, ver y responder sus reservas.
  * - ADMIN: todo.
@@ -51,7 +52,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST,
-                                "/api/auth/login", "/api/auth/register", "/api/auth/refresh", "/api/auth/logout").permitAll()
+                                "/api/auth/login", "/api/auth/register", "/api/auth/refresh", "/api/auth/logout",
+                                "/api/auth/recuperar", "/api/auth/restablecer").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()

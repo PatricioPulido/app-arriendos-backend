@@ -51,10 +51,36 @@ pausa si pasa 7 dias sin uso; se reactiva desde el panel.
 4. Espera el build (5-8 min la primera vez). Abre
    `https://<tu-servicio>.onrender.com/actuator/health`: debe decir `UP`.
 5. Entra con el admin desde el front y luego BORRA `ADMIN_EMAIL` y
-   `ADMIN_PASSWORD` de Render.
+   `ADMIN_PASSWORD` de Render. Ojo: `ADMIN_PASSWORD` solo se usa la PRIMERA vez
+   (cuando no hay ningun admin). Cambiarla despues no cambia la clave; para eso usa
+   "¿Olvidaste tu contraseña?".
 
 Plan free: se duerme tras 15 min sin uso y tarda ~1 min en despertar.
 Cuando tengas clientes, pasa a Starter (USD 7/mes).
+
+### Correo para "¿Olvidaste tu contraseña?" (Brevo)
+
+Se usa Brevo porque es gratis (300 correos al dia), envia por HTTP (Render free
+bloquea SMTP) y no exige tener dominio propio.
+
+1. Crea cuenta gratis en https://www.brevo.com.
+2. Remitente: menu de tu cuenta > **Senders, Domains & Dedicated IPs** > **Senders** >
+   **Add a sender**. Pon tu correo (por ejemplo tu Gmail) y confirma el email que te llega.
+3. Clave: menu de tu cuenta > **SMTP & API** > pestaña **API Keys** > **Generate a new API key**.
+   Copiala (empieza con `xkeysib-`). Solo se muestra una vez.
+4. En Render > tu servicio > **Environment** agrega:
+   - `BREVO_API_KEY` = la clave del paso 3
+   - `MAIL_FROM` = el correo verificado del paso 2
+   Guarda con **Save, rebuild and deploy**.
+5. Prueba: en el front, "¿Olvidaste tu contraseña?" con tu email. En Render > **Logs**
+   debe aparecer `Correo enviado`.
+
+Sin `BREVO_API_KEY` la app funciona igual, pero el correo no sale: el enlace queda
+escrito en Render > Logs (linea `el correo NO se envió`). Sirve para emergencias, por
+ejemplo si el admin olvida su clave.
+
+Tip: con Gmail como remitente algunos correos llegan a spam. Cuando compres un dominio,
+verificalo en Brevo (Domains) y usa un remitente como `no-responder@tudominio.cl`.
 
 ## 3. Frontend en Vercel
 

@@ -22,6 +22,12 @@ public final class AuthDtos {
             /** HUESPED (por defecto) o ANFITRION. */
             TipoCuenta tipoCuenta) {}
 
+    public record RecuperarRequest(@NotBlank @Email(message = "Email inválido") String email) {}
+
+    public record RestablecerRequest(
+            @NotBlank(message = "Falta el código del enlace") String token,
+            @NotBlank @Size(min = 8, max = 72, message = "La contraseña debe tener entre 8 y 72 caracteres") String password) {}
+
     public record UsuarioDto(Long idUsuario, String email, Rol rol, Long idArrendatario) {}
 
     /** Respuesta de login/registro/refresh. El refresh token NO va aqui: va en una cookie HttpOnly. */

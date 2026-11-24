@@ -43,4 +43,8 @@
     UPDATE USUARIOS SET ROL = #{rol} WHERE ID_USUARIO = #{id}
   </update>
 
+  <update id="updatePassword">
+    UPDATE USUARIOS SET PASSWORD_HASH = #{passwordHash} WHERE ID_USUARIO = #{id}
+  </update>
+
 </mapper>
