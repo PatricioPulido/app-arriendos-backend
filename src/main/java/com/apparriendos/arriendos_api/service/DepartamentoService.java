@@ -65,8 +65,11 @@ public class DepartamentoService {
 
     @Transactional
     public Departamento actualizar(Long id, Departamento cambios, UsuarioActual usuario) {
-        buscarEditable(id, usuario);
+        Departamento actual = buscarEditable(id, usuario);
         cambios.setIdDepartamento(id);
+        // Si el cliente no envia las listas (p. ej. un front antiguo), se conservan las que habia
+        if (cambios.getComodidades() == null) cambios.setComodidades(actual.getComodidades());
+        if (cambios.getDestacados() == null) cambios.setDestacados(actual.getDestacados());
         normalizarFicha(cambios);
         mapper.update(cambios);
         return detalle(id);
