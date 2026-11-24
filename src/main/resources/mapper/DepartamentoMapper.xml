@@ -24,12 +24,23 @@
         <result property="nombreAnfitrion" column="NOMBRE_ANFITRION"/>
         <result property="imagenUrl" column="PORTADA"/>
         <result property="precio" column="PRECIO"/>
+        <result property="comodidades" column="COMODIDADES" typeHandler="com.apparriendos.arriendos_api.config.ListaTextoTypeHandler"/>
+        <result property="destacados" column="DESTACADOS" typeHandler="com.apparriendos.arriendos_api.config.ListaTextoTypeHandler"/>
+        <result property="horaCheckIn" column="HORA_CHECK_IN"/>
+        <result property="horaCheckOut" column="HORA_CHECK_OUT"/>
+        <result property="permiteMascotas" column="PERMITE_MASCOTAS"/>
+        <result property="permiteFumar" column="PERMITE_FUMAR"/>
+        <result property="permiteFiestas" column="PERMITE_FIESTAS"/>
+        <result property="reglasAdicionales" column="REGLAS_ADICIONALES"/>
+        <result property="sobreLaZona" column="SOBRE_LA_ZONA"/>
     </resultMap>
 
     <!-- Columnas comunes. La portada es la primera foto de la galeria o, si no hay, imagen_url. -->
     <sql id="columnas">
         d.ID_DEPARTAMENTO, d.NOMBRE, d.DESCRIPCION, d.NUMERO, d.DIRECCION, d.METROS_CUADRADOS,
         d.TIPOLOGIA, d.CAPACIDAD, d.DORMITORIOS, d.BANOS, d.ID_ZONA, d.ID_ANFITRION, d.PRECIO,
+        d.COMODIDADES, d.DESTACADOS, d.HORA_CHECK_IN, d.HORA_CHECK_OUT,
+        d.PERMITE_MASCOTAS, d.PERMITE_FUMAR, d.PERMITE_FIESTAS, d.REGLAS_ADICIONALES, d.SOBRE_LA_ZONA,
         z.NOMBRE AS NOMBRE_ZONA, c.ID_CIUDAD, c.NOMBRE AS NOMBRE_CIUDAD,
         COALESCE((SELECT i.URL FROM DEPARTAMENTO_IMAGENES i
                   WHERE i.ID_DEPARTAMENTO = d.ID_DEPARTAMENTO
@@ -104,10 +115,15 @@
         </selectKey>
         INSERT INTO DEPARTAMENTOS
             (ID_DEPARTAMENTO, NOMBRE, DESCRIPCION, NUMERO, DIRECCION, METROS_CUADRADOS, TIPOLOGIA,
-             CAPACIDAD, DORMITORIOS, BANOS, ID_ZONA, ID_ANFITRION, IMAGEN_URL, PRECIO)
+             CAPACIDAD, DORMITORIOS, BANOS, ID_ZONA, ID_ANFITRION, IMAGEN_URL, PRECIO,
+             COMODIDADES, DESTACADOS, HORA_CHECK_IN, HORA_CHECK_OUT,
+             PERMITE_MASCOTAS, PERMITE_FUMAR, PERMITE_FIESTAS, REGLAS_ADICIONALES, SOBRE_LA_ZONA)
         VALUES
             (#{idDepartamento}, #{nombre}, #{descripcion}, #{numero}, #{direccion}, #{metrosCuadrados}, #{tipologia},
-             #{capacidad}, #{dormitorios}, #{banos}, #{idZona}, #{idAnfitrion}, #{imagenUrl}, #{precio})
+             #{capacidad}, #{dormitorios}, #{banos}, #{idZona}, #{idAnfitrion}, #{imagenUrl}, #{precio},
+             #{comodidades, typeHandler=com.apparriendos.arriendos_api.config.ListaTextoTypeHandler}, #{destacados, typeHandler=com.apparriendos.arriendos_api.config.ListaTextoTypeHandler},
+             #{horaCheckIn}, #{horaCheckOut}, #{permiteMascotas}, #{permiteFumar}, #{permiteFiestas},
+             #{reglasAdicionales}, #{sobreLaZona})
     </insert>
 
     <!-- El dueno (ID_ANFITRION) no se cambia al editar -->
@@ -124,7 +140,16 @@
             BANOS = #{banos},
             ID_ZONA = #{idZona},
             IMAGEN_URL = #{imagenUrl},
-            PRECIO = #{precio}
+            PRECIO = #{precio},
+            COMODIDADES = #{comodidades, typeHandler=com.apparriendos.arriendos_api.config.ListaTextoTypeHandler},
+            DESTACADOS = #{destacados, typeHandler=com.apparriendos.arriendos_api.config.ListaTextoTypeHandler},
+            HORA_CHECK_IN = #{horaCheckIn},
+            HORA_CHECK_OUT = #{horaCheckOut},
+            PERMITE_MASCOTAS = #{permiteMascotas},
+            PERMITE_FUMAR = #{permiteFumar},
+            PERMITE_FIESTAS = #{permiteFiestas},
+            REGLAS_ADICIONALES = #{reglasAdicionales},
+            SOBRE_LA_ZONA = #{sobreLaZona}
         WHERE ID_DEPARTAMENTO = #{idDepartamento}
     </update>
 

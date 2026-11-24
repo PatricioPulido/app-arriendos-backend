@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 
 /**
@@ -57,6 +58,7 @@ public class DepartamentoService {
     public Departamento crear(Departamento d, UsuarioActual usuario) {
         d.setIdDepartamento(null); // lo asigna la secuencia
         d.setIdAnfitrion(usuario.idUsuario());
+        normalizarFicha(d);
         mapper.insert(d);
         return detalle(d.getIdDepartamento());
     }
@@ -65,6 +67,7 @@ public class DepartamentoService {
     public Departamento actualizar(Long id, Departamento cambios, UsuarioActual usuario) {
         buscarEditable(id, usuario);
         cambios.setIdDepartamento(id);
+        normalizarFicha(cambios);
         mapper.update(cambios);
         return detalle(id);
     }
@@ -86,6 +89,24 @@ public class DepartamentoService {
             throw ApiException.prohibido("Solo el anfitrión de esta propiedad puede modificarla");
         }
         return d;
+    }
+
+    /** Quita repetidos y textos vacios antes de guardar. */
+    static void normalizarFicha(Departamento d) {
+        d.setComodidades(sinRepetidos(d.getComodidades()));
+        d.setDestacados(sinRepetidos(d.getDestacados()));
+        d.setHoraCheckIn(textoONull(d.getHoraCheckIn()));
+        d.setHoraCheckOut(textoONull(d.getHoraCheckOut()));
+        d.setReglasAdicionales(textoONull(d.getReglasAdicionales()));
+        d.setSobreLaZona(textoONull(d.getSobreLaZona()));
+    }
+
+    private static List<String> sinRepetidos(List<String> codigos) {
+        return codigos == null ? List.of() : List.copyOf(new LinkedHashSet<>(codigos));
+    }
+
+    private static String textoONull(String s) {
+        return s == null || s.isBlank() ? null : s.trim();
     }
 
     static void despuesDeConfirmar(Runnable accion) {
