@@ -50,6 +50,7 @@ class SecurityRulesTest {
     @MockitoBean ArrendatarioService arrendatarioService;
     @MockitoBean ReservaService reservaService;
     @MockitoBean AuthService authService;
+    @MockitoBean PasswordResetService passwordResetService;
 
     private String adminToken;
     private String arrendatarioToken;
@@ -185,6 +186,28 @@ class SecurityRulesTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"u2@test.cl\",\"password\":\"x\"}"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void recuperarEsPublicoYRespondeIgualExistaONoLaCuenta() throws Exception {
+        mvc.perform(post("/api/auth/recuperar").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"nadie@test.cl\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mensaje").value(org.hamcrest.Matchers.startsWith("Si existe una cuenta")));
+        verify(passwordResetService).solicitar("nadie@test.cl");
+    }
+
+    @Test
+    void restablecerEsPublicoYValidaLaClave() throws Exception {
+        mvc.perform(post("/api/auth/restablecer").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"abc\",\"password\":\"corta\"}"))
+                .andExpect(status().isBadRequest());
+        verify(passwordResetService, never()).restablecer(any(), any());
+
+        mvc.perform(post("/api/auth/restablecer").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"abc\",\"password\":\"clave-nueva-123\"}"))
+                .andExpect(status().isOk());
+        verify(passwordResetService).restablecer("abc", "clave-nueva-123");
     }
 
     @Test

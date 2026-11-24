@@ -37,6 +37,11 @@ services:
         value: "false"
       - key: EXPOSE_ERROR_DETAILS
         value: "false"
+      # Correo para "¿Olvidaste tu contraseña?" (ver docs/DESPLIEGUE.md, seccion Correo)
+      - key: BREVO_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        sync: false
       # Primer admin: definir para el primer deploy y BORRAR despues
       - key: ADMIN_EMAIL
         sync: false
