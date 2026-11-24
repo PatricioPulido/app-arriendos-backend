@@ -14,6 +14,7 @@ El backend usa la BD Postgres de Supabase.
    - `db/migrations/001_esquema_inicial.sql`
    - `db/migrations/002_anfitriones_y_galeria.sql`
    - `db/migrations/003_ciudades_turisticas.sql` (ciudades y zonas iniciales)
+   - `db/migrations/004_ficha_alojamiento.sql` (comodidades, destacados, reglas y horarios de la ficha)
    - `db/supabase/storage_bucket.sql` (crea el bucket publico `departamentos` para las fotos)
 
    Cada migracion nueva (`003_...`) se ejecuta igual, una vez, en orden.
