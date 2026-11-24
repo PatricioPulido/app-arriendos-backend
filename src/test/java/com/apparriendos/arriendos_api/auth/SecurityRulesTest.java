@@ -37,7 +37,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers = {DepartamentoController.class, ArrendatarioController.class,
         ReservaController.class, AuthController.class})
 @Import({SecurityConfig.class, JwtConfig.class, JwtService.class, AuthExceptionHandler.class,
-        DbErrorHandler.class, LoginRateLimiter.class})
+        DbErrorHandler.class, LoginRateLimiter.class,
+        com.apparriendos.arriendos_api.config.CorsConfig.class})
 @TestPropertySource(properties = "app.jwt.secret=clave-de-prueba-de-al-menos-32-caracteres!!")
 class SecurityRulesTest {
 
@@ -160,6 +161,30 @@ class SecurityRulesTest {
                         org.hamcrest.Matchers.containsString("refresh_token=refresh123"),
                         org.hamcrest.Matchers.containsString("HttpOnly"),
                         org.hamcrest.Matchers.containsString("Path=/api/auth"))));
+    }
+
+    // El front en Vercel llama por el proxy (/api -> Render): el host es el de Render
+    // pero el navegador manda Origin de Vercel. Antes daba 403 "Invalid CORS request".
+    @Test
+    void loginDesdeElFrontDeVercelNoEsBloqueadoPorCors() throws Exception {
+        var dto = new AuthDtos.UsuarioDto(2L, "u2@test.cl", Rol.ARRENDATARIO, 50L);
+        when(authService.login("u2@test.cl", "clave-segura"))
+                .thenReturn(new AuthDtos.Tokens(new AuthDtos.AuthResponse("tok", "Bearer", 900, dto), "refresh123"));
+
+        mvc.perform(post("https://arriendos-api.onrender.com/api/auth/login")
+                        .header("Origin", "https://arriendos-tau.vercel.app")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"u2@test.cl\",\"password\":\"clave-segura\"}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void origenDesconocidoSigueBloqueado() throws Exception {
+        mvc.perform(post("https://arriendos-api.onrender.com/api/auth/login")
+                        .header("Origin", "https://sitio-malicioso.com")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"u2@test.cl\",\"password\":\"x\"}"))
+                .andExpect(status().isForbidden());
     }
 
     @Test

@@ -18,14 +18,21 @@ public class CorsConfig {
     @Value("${app.cors.allowed-origins:http://localhost:4200,http://localhost:3000}")
     private String allowedOrigins;
 
+    // Origen del front en producción. Aunque el front llama por el proxy de
+    // vercel.json, el navegador manda Origin en los POST y Spring lo compara con
+    // el host de Render: sin esto, registro/login responden 403.
+    @Value("${app.cors.front-url:https://arriendos-tau.vercel.app}")
+    private String frontUrl;
+
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
 
         // Agregar todos los orígenes permitidos
-        Arrays.stream(allowedOrigins.split(","))
+        Arrays.stream((allowedOrigins + "," + frontUrl).split(","))
                 .map(String::trim)
                 .filter(s -> !s.isBlank())
+                .distinct()
                 .forEach(config::addAllowedOrigin);
 
         // Permitir todos los headers y métodos
